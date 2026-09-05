@@ -5,12 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000 --host",
+    "server": "node server.js",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.9",
     "@react-three/drei": "^9.121.5",
     "@react-three/fiber": "^8.17.14",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

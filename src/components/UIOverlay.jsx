@@ -18,8 +18,10 @@ import {
   MapPin,
   ListFilter,
   Flame,
-  Maximize2
+  Maximize2,
+  Loader2
 } from 'lucide-react';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import { WorldScene } from './WorldScene';
 import { PRESET_COLORS, PRESET_LOGOS } from '../data/buildings';
 
@@ -40,7 +42,9 @@ export function UIOverlay({
   customFloors,
   setCustomFloors,
   onClaimOrOutbid,
-  claimSuccess
+  claimSuccess,
+  isProcessingPayment,
+  isSignedIn
 }) {
   const [viewMode, setViewMode] = useState('map'); // 'map' | 'list'
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,7 +108,7 @@ export function UIOverlay({
           <a href="#blog" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Blog</a>
         </nav>
 
-        {/* Right Search + Sign In + Get Started Buttons */}
+        {/* Right Search + Sign In + Clerk UserButton + Get Started */}
         <div className="flex items-center gap-3 z-30">
           {/* Search Bar */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/90 border border-slate-200 rounded-full text-xs text-slate-500 shadow-sm focus-within:border-emerald-500 transition-all">
@@ -118,9 +122,21 @@ export function UIOverlay({
             />
           </div>
 
-          <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all">
-            Sign in
-          </button>
+          {/* Clerk Auth Section */}
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
+                Sign in
+              </button>
+            </SignInButton>
+          </SignedOut>
+
+          <SignedIn>
+            <div className="flex items-center gap-2 border border-slate-200 rounded-full p-1 bg-white shadow-sm">
+              <UserButton showName={false} />
+            </div>
+          </SignedIn>
+
           <button
             onClick={() => document.getElementById('world-section')?.scrollIntoView({ behavior: 'smooth' })}
             className="px-5 py-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-full shadow-md shadow-emerald-600/30 transition-all hover:scale-105"
@@ -134,7 +150,7 @@ export function UIOverlay({
       {/* 2. HERO SECTION OVER FULL-WIDTH LANDSCAPE BACKDROP       */}
       {/* ========================================================= */}
       <section className="w-full relative py-10 md:py-14 px-4 flex flex-col items-center justify-center text-center z-10">
-        {/* Handwritten Style Annotations matching reference image */}
+        {/* Handwritten Style Annotations */}
         <div className="hidden lg:block absolute top-8 left-[12%] max-w-[170px] text-left pointer-events-none transform -rotate-6">
           <p className="font-serif italic text-xs text-emerald-900/80 leading-snug font-bold">
             From startups to global brands — everyone belongs here.
@@ -173,7 +189,7 @@ export function UIOverlay({
             <ArrowRight className="w-4 h-4" />
           </button>
 
-          {/* Stats Bar matching reference image */}
+          {/* Stats Bar */}
           <div className="flex items-center justify-center gap-6 md:gap-10 px-6 py-2.5 bg-white/95 backdrop-blur-md rounded-full border border-emerald-100 shadow-md text-xs font-bold text-slate-700">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-emerald-600" />
@@ -198,7 +214,7 @@ export function UIOverlay({
       {/* ========================================================= */}
       <section id="world-section" className="w-full relative max-w-[1440px] px-2 md:px-6 mb-16 scroll-mt-20 z-10">
         
-        {/* Main 3D World Canvas Container with Full-Width Illustrated BG */}
+        {/* Main 3D World Canvas Container */}
         <div className="relative w-full h-[720px] md:h-[780px] rounded-3xl overflow-hidden border border-emerald-200/80 shadow-2xl bg-[#a7e8c3]">
 
           {/* Exact Illustrated Background Image behind 3D Scene */}
@@ -261,7 +277,7 @@ export function UIOverlay({
           )}
 
           {/* ----------------------------------------------------- */}
-          {/* MAP CONTROLS OVERLAY (Matching Reference Image)       */}
+          {/* MAP CONTROLS OVERLAY                                 */}
           {/* ----------------------------------------------------- */}
 
           {/* Top Left Pills: [Map View] [List View] */}
@@ -316,7 +332,7 @@ export function UIOverlay({
             ))}
           </div>
 
-          {/* Bottom Left Badge: 327 people exploring */}
+          {/* Bottom Left Badge */}
           <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full border border-slate-200/80 shadow-md text-xs font-bold text-slate-700">
             <div className="flex -space-x-1.5 overflow-hidden">
               <span className="inline-block h-5 w-5 rounded-full ring-2 ring-white bg-emerald-500 text-[10px] text-white font-black flex items-center justify-center">A</span>
@@ -358,7 +374,7 @@ export function UIOverlay({
           {selectedBuilding && (
             <div className="absolute top-4 right-4 z-30 max-w-sm w-full max-h-[92%] overflow-y-auto bg-white/95 backdrop-blur-2xl p-5 rounded-3xl border border-white/80 shadow-2xl text-slate-900 pointer-events-auto">
               
-              {/* Card Header: Building Name | Available Badge | X Close */}
+              {/* Card Header */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-black text-slate-900 leading-snug">{selectedBuilding.name}</h3>
@@ -507,42 +523,57 @@ export function UIOverlay({
                   </div>
                 </div>
 
-                {/* Your Bid USD */}
+                {/* Validated Price Display */}
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Your Bid (USD)</label>
-                  <input
-                    type="number"
-                    value={minOutbid}
-                    readOnly
-                    className="w-full px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900"
-                  />
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Server-Validated Bid Price (USD)</label>
+                  <div className="w-full px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-black text-emerald-800 flex items-center justify-between">
+                    <span>Minimum Required:</span>
+                    <span>${minOutbid} USD</span>
+                  </div>
                 </div>
               </div>
 
               {/* Action CTA Buttons */}
               <div className="space-y-2">
-                <button
-                  onClick={() => onClaimOrOutbid(selectedBuilding, minOutbid)}
-                  className={`w-full py-3 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg transition-all ${
-                    claimSuccess
-                      ? 'bg-emerald-500 text-white'
-                      : selectedBuilding.status === 'owned'
-                      ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/30'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30 hover:scale-[1.02]'
-                  }`}
-                >
-                  {claimSuccess ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 animate-bounce" />
-                      Building Claimed &amp; Customized!
-                    </>
-                  ) : (
-                    <>
+                {isSignedIn ? (
+                  <button
+                    onClick={() => onClaimOrOutbid(selectedBuilding, minOutbid)}
+                    disabled={isProcessingPayment}
+                    className={`w-full py-3 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg transition-all ${
+                      claimSuccess
+                        ? 'bg-emerald-500 text-white'
+                        : isProcessingPayment
+                        ? 'bg-slate-400 text-white cursor-wait'
+                        : selectedBuilding.status === 'owned'
+                        ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/30'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30 hover:scale-[1.02]'
+                    }`}
+                  >
+                    {isProcessingPayment ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating Dodo Checkout Session...
+                      </>
+                    ) : claimSuccess ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 animate-bounce" />
+                        Building Claimed &amp; Customized!
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Place Bid &amp; Pay via Dodo (${minOutbid})
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <SignInButton mode="modal">
+                    <button className="w-full py-3 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30 cursor-pointer">
                       <Sparkles className="w-4 h-4" />
-                      Place Bid &amp; Claim (${minOutbid})
-                    </>
-                  )}
-                </button>
+                      Sign In to Claim &amp; Pay (${minOutbid})
+                    </button>
+                  </SignInButton>
+                )}
 
                 <button
                   onClick={() => alert(`Showing details for ${selectedBuilding.name}`)}
@@ -559,7 +590,7 @@ export function UIOverlay({
       </section>
 
       {/* ========================================================= */}
-      {/* 4. SECTION: HOW IT WORKS (Light 4-step Cards)            */}
+      {/* 4. SECTION: HOW IT WORKS                                  */}
       {/* ========================================================= */}
       <section id="how-it-works" className="w-full max-w-7xl px-4 py-16 text-center relative">
         <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">How It Works</h2>
@@ -609,22 +640,9 @@ export function UIOverlay({
             </p>
           </div>
         </div>
-
-        {/* Handwritten callout on bottom right */}
-        <div className="hidden md:block absolute bottom-4 right-12 text-right pointer-events-none transform rotate-3">
-          <p className="font-serif italic text-xs text-emerald-800/80 leading-snug">
-            Same land.<br />Bigger opportunities.
-          </p>
-          <svg className="w-10 h-8 text-emerald-700/60 mt-1 ml-auto" viewBox="0 0 50 30" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M 40 5 Q 20 20 5 15" strokeDasharray="3 3" />
-            <path d="M 12 18 L 5 15 L 8 8" />
-          </svg>
-        </div>
       </section>
 
-      {/* ========================================================= */}
-      {/* 5. FOOTER                                                 */}
-      {/* ========================================================= */}
+      {/* FOOTER */}
       <footer className="w-full border-t border-emerald-100 bg-white py-8 px-4 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-semibold">
         <div className="flex items-center gap-2 text-slate-900 font-black">
           <Building2 className="w-4 h-4 text-emerald-600" />
