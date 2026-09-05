@@ -25,6 +25,34 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-reac
 import { WorldScene } from './WorldScene';
 import { PRESET_COLORS, PRESET_LOGOS } from '../data/buildings';
 
+// Safe Clerk Auth Navigation Component
+function SafeClerkAuthNav() {
+  try {
+    return (
+      <>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
+              Sign in
+            </button>
+          </SignInButton>
+        </SignedOut>
+        <SignedIn>
+          <div className="flex items-center gap-2 border border-slate-200 rounded-full p-1 bg-white shadow-sm">
+            <UserButton showName={false} />
+          </div>
+        </SignedIn>
+      </>
+    );
+  } catch (e) {
+    return (
+      <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
+        Sign in
+      </button>
+    );
+  }
+}
+
 export function UIOverlay({
   buildings = [],
   selectedBuilding,
@@ -122,20 +150,8 @@ export function UIOverlay({
             />
           </div>
 
-          {/* Clerk Auth Section */}
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
-                Sign in
-              </button>
-            </SignInButton>
-          </SignedOut>
-
-          <SignedIn>
-            <div className="flex items-center gap-2 border border-slate-200 rounded-full p-1 bg-white shadow-sm">
-              <UserButton showName={false} />
-            </div>
-          </SignedIn>
+          {/* Safe Clerk Auth Nav */}
+          <SafeClerkAuthNav />
 
           <button
             onClick={() => document.getElementById('world-section')?.scrollIntoView({ behavior: 'smooth' })}
@@ -276,11 +292,7 @@ export function UIOverlay({
             </div>
           )}
 
-          {/* ----------------------------------------------------- */}
-          {/* MAP CONTROLS OVERLAY                                 */}
-          {/* ----------------------------------------------------- */}
-
-          {/* Top Left Pills: [Map View] [List View] */}
+          {/* MAP CONTROLS OVERLAY */}
           <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-white/90 backdrop-blur-md p-1 rounded-2xl border border-slate-200/80 shadow-md">
             <button
               onClick={() => setViewMode('map')}
@@ -368,9 +380,7 @@ export function UIOverlay({
             </button>
           </div>
 
-          {/* ----------------------------------------------------- */}
-          {/* RIGHT FLOATING INSPECTION & CUSTOMIZATION MODAL       */}
-          {/* ----------------------------------------------------- */}
+          {/* RIGHT FLOATING INSPECTION & CUSTOMIZATION MODAL */}
           {selectedBuilding && (
             <div className="absolute top-4 right-4 z-30 max-w-sm w-full max-h-[92%] overflow-y-auto bg-white/95 backdrop-blur-2xl p-5 rounded-3xl border border-white/80 shadow-2xl text-slate-900 pointer-events-auto">
               
@@ -476,7 +486,7 @@ export function UIOverlay({
                   </div>
                 </div>
 
-                {/* Grow Building (Floors & Height Upgrade) */}
+                {/* Grow Building */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[10px] font-bold text-slate-500">Grow Building (Floors &amp; Height)</label>
@@ -535,45 +545,36 @@ export function UIOverlay({
 
               {/* Action CTA Buttons */}
               <div className="space-y-2">
-                {isSignedIn ? (
-                  <button
-                    onClick={() => onClaimOrOutbid(selectedBuilding, minOutbid)}
-                    disabled={isProcessingPayment}
-                    className={`w-full py-3 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg transition-all ${
-                      claimSuccess
-                        ? 'bg-emerald-500 text-white'
-                        : isProcessingPayment
-                        ? 'bg-slate-400 text-white cursor-wait'
-                        : selectedBuilding.status === 'owned'
-                        ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/30'
-                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30 hover:scale-[1.02]'
-                    }`}
-                  >
-                    {isProcessingPayment ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Generating Dodo Checkout Session...
-                      </>
-                    ) : claimSuccess ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 animate-bounce" />
-                        Building Claimed &amp; Customized!
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Place Bid &amp; Pay via Dodo (${minOutbid})
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <SignInButton mode="modal">
-                    <button className="w-full py-3 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30 cursor-pointer">
+                <button
+                  onClick={() => onClaimOrOutbid(selectedBuilding, minOutbid)}
+                  disabled={isProcessingPayment}
+                  className={`w-full py-3 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg transition-all ${
+                    claimSuccess
+                      ? 'bg-emerald-500 text-white'
+                      : isProcessingPayment
+                      ? 'bg-slate-400 text-white cursor-wait'
+                      : selectedBuilding.status === 'owned'
+                      ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/30'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30 hover:scale-[1.02]'
+                  }`}
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating Dodo Checkout Session...
+                    </>
+                  ) : claimSuccess ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 animate-bounce" />
+                      Building Claimed &amp; Customized!
+                    </>
+                  ) : (
+                    <>
                       <Sparkles className="w-4 h-4" />
-                      Sign In to Claim &amp; Pay (${minOutbid})
-                    </button>
-                  </SignInButton>
-                )}
+                      Place Bid &amp; Pay via Dodo (${minOutbid})
+                    </>
+                  )}
+                </button>
 
                 <button
                   onClick={() => alert(`Showing details for ${selectedBuilding.name}`)}

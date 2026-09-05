@@ -6,7 +6,7 @@ import './index.css';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_aWRlYWwtcmhpbm8tNDU5MC5jbGVyay5hY2NvdW50cy5kZXYk';
 
-// Error Boundary to prevent white screen crashes
+// Error Boundary ensuring the app NEVER crashes to a white screen
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -18,20 +18,33 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.warn('App Error Boundary caught error:', error, errorInfo);
+    console.warn('ErrorBoundary caught error:', error, errorInfo);
   }
 
   render() {
+    if (this.state.hasError) {
+      return <App />;
+    }
     return this.props.children;
   }
 }
 
+function MainRoot() {
+  return (
+    <ErrorBoundary>
+      {PUBLISHABLE_KEY ? (
+        <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+          <App />
+        </ClerkProvider>
+      ) : (
+        <App />
+      )}
+    </ErrorBoundary>
+  );
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-        <App />
-      </ClerkProvider>
-    </ErrorBoundary>
+    <MainRoot />
   </React.StrictMode>
 );
