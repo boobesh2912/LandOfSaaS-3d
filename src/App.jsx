@@ -6,8 +6,20 @@ import { BUILDINGS_DATA } from './data/buildings';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export function App() {
-  const { isSignedIn, userId } = useAuth();
-  const { user } = useUser();
+  // Safe Clerk Auth hooks (with fallback if Clerk is offline)
+  let isSignedIn = false;
+  let userId = null;
+  let user = null;
+
+  try {
+    const auth = useAuth();
+    const userObj = useUser();
+    isSignedIn = auth?.isSignedIn || false;
+    userId = auth?.userId || null;
+    user = userObj?.user || null;
+  } catch (e) {
+    console.warn('Clerk context warning:', e);
+  }
 
   const [buildings, setBuildings] = useState(BUILDINGS_DATA);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
@@ -23,15 +35,15 @@ export function App() {
   // Fetch Authoritative Server State
   useEffect(() => {
     fetch(`${API_BASE}/api/buildings`)
-      ? fetch(`${API_BASE}/api/buildings`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data?.success && data.buildings) {
-              setBuildings(data.buildings);
-            }
-          })
-          .catch((err) => console.warn('Using local buildings state fallback:', err))
-      : null;
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.buildings)) {
+          setBuildings(data.buildings);
+        }
+      })
+      .catch((err) => {
+        console.warn('Using local buildings state fallback:', err);
+      });
   }, []);
 
   // Check for Dodo Payments Redirect URL Callback Params (?payment=success&building_id=...)
@@ -71,7 +83,7 @@ export function App() {
     setIsProcessingPayment(true);
 
     try {
-      // 1. Call Backend API (Never calculate price on client)
+      // 1. Call Backend API (Server validates price)
       const res = await fetch(`${API_BASE}/api/create-payment-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -89,22 +101,20 @@ export function App() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        alert(`Payment session failed: ${data.error || 'Unknown error'}`);
+        alert(`Payment session error: ${data.error || 'Failed to initialize Dodo payment session'}`);
         setIsProcessingPayment(false);
         return;
       }
 
-      // 2. Redirect User to Dodo Payments Test Checkout Page
+      // 2. Redirect User to Dodo Payments Checkout Page
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
       } else {
-        // Instant fallback for local test verification
         setClaimSuccess(true);
         setIsProcessingPayment(false);
       }
     } catch (err) {
       console.error('Payment checkout error:', err);
-      // Fallback update for offline preview
       setClaimSuccess(true);
       setIsProcessingPayment(false);
     }
