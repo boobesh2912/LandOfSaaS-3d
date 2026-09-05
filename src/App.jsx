@@ -5,14 +5,22 @@ import { BUILDINGS_DATA } from './data/buildings';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-export function App() {
-  // Top-Level Unconditional React Hooks (Strict React Rules of Hooks)
-  const auth = useAuth();
-  const userObj = useUser();
-  const isSignedIn = auth?.isSignedIn || false;
-  const userId = auth?.userId || null;
-  const user = userObj?.user || null;
+// Isolated Auth State Listener Component
+function AuthStateListener({ onAuthState }) {
+  try {
+    const { isSignedIn, userId } = useAuth();
+    const { user } = useUser();
+    useEffect(() => {
+      onAuthState({ isSignedIn, userId, user });
+    }, [isSignedIn, userId, user]);
+  } catch (e) {
+    // Auth provider not active
+  }
+  return null;
+}
 
+export function App() {
+  const [authState, setAuthState] = useState({ isSignedIn: false, userId: null, user: null });
   const [buildings, setBuildings] = useState(BUILDINGS_DATA);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [filterCluster, setFilterCluster] = useState('all');
@@ -53,7 +61,7 @@ export function App() {
                   ...b,
                   status: 'owned',
                   owner: {
-                    name: user?.firstName ? `${user.firstName}'s Startup` : 'Verified Owner',
+                    name: authState.user?.firstName ? `${authState.user.firstName}'s Startup` : 'Verified Owner',
                     logo: '🚀',
                     website: 'https://mystartup.com',
                     color: '#10b981'
@@ -66,7 +74,7 @@ export function App() {
 
       setTimeout(() => setClaimSuccess(false), 4000);
     }
-  }, [user]);
+  }, [authState.user]);
 
   // SECURE BACKEND PAYMENT INITIATION HANDLER
   const handleClaimOrOutbid = async (building) => {
@@ -86,7 +94,7 @@ export function App() {
           customColor,
           customLogo,
           customFloors,
-          userId: userId || 'anonymous'
+          userId: authState.userId || 'anonymous'
         })
       });
 
@@ -114,6 +122,7 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#f3fbf6] text-slate-900 font-sans relative overflow-x-hidden">
+      <AuthStateListener onAuthState={setAuthState} />
       <UIOverlay
         buildings={buildings}
         selectedBuilding={selectedBuilding}
@@ -133,7 +142,7 @@ export function App() {
         onClaimOrOutbid={handleClaimOrOutbid}
         claimSuccess={claimSuccess}
         isProcessingPayment={isProcessingPayment}
-        isSignedIn={isSignedIn}
+        isSignedIn={authState.isSignedIn}
       />
     </div>
   );
