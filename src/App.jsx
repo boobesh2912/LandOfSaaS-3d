@@ -6,20 +6,12 @@ import { BUILDINGS_DATA } from './data/buildings';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export function App() {
-  // Safe Clerk Auth hooks (with fallback if Clerk is offline)
-  let isSignedIn = false;
-  let userId = null;
-  let user = null;
-
-  try {
-    const auth = useAuth();
-    const userObj = useUser();
-    isSignedIn = auth?.isSignedIn || false;
-    userId = auth?.userId || null;
-    user = userObj?.user || null;
-  } catch (e) {
-    console.warn('Clerk context warning:', e);
-  }
+  // Top-Level Unconditional React Hooks (Strict React Rules of Hooks)
+  const auth = useAuth();
+  const userObj = useUser();
+  const isSignedIn = auth?.isSignedIn || false;
+  const userId = auth?.userId || null;
+  const user = userObj?.user || null;
 
   const [buildings, setBuildings] = useState(BUILDINGS_DATA);
   const [selectedBuilding, setSelectedBuilding] = useState(null);

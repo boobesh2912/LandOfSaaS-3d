@@ -25,32 +25,24 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-reac
 import { WorldScene } from './WorldScene';
 import { PRESET_COLORS, PRESET_LOGOS } from '../data/buildings';
 
-// Safe Clerk Auth Navigation Component
+// Standard Clerk Auth Navigation Component
 function SafeClerkAuthNav() {
-  try {
-    return (
-      <>
-        <SignedOut>
-          <SignInButton mode="modal">
-            <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
-              Sign in
-            </button>
-          </SignInButton>
-        </SignedOut>
-        <SignedIn>
-          <div className="flex items-center gap-2 border border-slate-200 rounded-full p-1 bg-white shadow-sm">
-            <UserButton showName={false} />
-          </div>
-        </SignedIn>
-      </>
-    );
-  } catch (e) {
-    return (
-      <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
-        Sign in
-      </button>
-    );
-  }
+  return (
+    <>
+      <SignedOut>
+        <SignInButton mode="modal">
+          <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
+            Sign in
+          </button>
+        </SignInButton>
+      </SignedOut>
+      <SignedIn>
+        <div className="flex items-center gap-2 border border-slate-200 rounded-full p-1 bg-white shadow-sm">
+          <UserButton showName={false} />
+        </div>
+      </SignedIn>
+    </>
+  );
 }
 
 export function UIOverlay({
