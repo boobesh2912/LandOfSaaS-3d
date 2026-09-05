@@ -65,10 +65,20 @@ export function UIOverlay({
   // Selected building current color / height / logo display
   const activeColor = customColor || selectedBuilding?.customColor || selectedBuilding?.owner?.color || selectedBuilding?.accentColor || '#10b981';
   const activeLogo = customLogo || selectedBuilding?.owner?.logo || '🚀';
-  const activeFloors = customFloors || selectedBuilding?.floors || 12;
+  const activeFloors = customFloors || selectedBuilding?.floors || 14;
 
   return (
-    <div className="w-full flex flex-col items-center font-sans text-slate-900 bg-[#f3fbf6] min-h-screen">
+    <div className="w-full flex flex-col items-center font-sans text-slate-900 bg-[#f3fbf6] min-h-screen relative">
+
+      {/* Full-Width Background Landscape Image across top hero section */}
+      <div className="absolute top-0 left-0 right-0 h-[650px] z-0 overflow-hidden pointer-events-none">
+        <img
+          src="/bg-landscape.jpg"
+          alt="LandOfSaaS Full Width Landscape"
+          className="w-full h-full object-cover opacity-35 filter brightness-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#f3fbf6]/20 via-transparent to-[#f3fbf6]"></div>
+      </div>
 
       {/* ========================================================= */}
       {/* 1. TOP HEADER NAV (Matching Reference Image)              */}
@@ -86,7 +96,7 @@ export function UIOverlay({
         </div>
 
         {/* Center Nav Links */}
-        <nav className="hidden lg:flex items-center gap-1 font-bold text-xs text-slate-600 bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm">
+        <nav className="hidden lg:flex items-center gap-1 font-bold text-xs text-slate-600 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm">
           <a href="#world-section" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors text-emerald-700 font-extrabold">Explore 3D</a>
           <a href="#how-it-works" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">How it works</a>
           <a href="#pricing" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Pricing</a>
@@ -95,7 +105,7 @@ export function UIOverlay({
         </nav>
 
         {/* Right Search + Sign In + Get Started Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 z-30">
           {/* Search Bar */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/90 border border-slate-200 rounded-full text-xs text-slate-500 shadow-sm focus-within:border-emerald-500 transition-all">
             <Search className="w-3.5 h-3.5 text-slate-400" />
@@ -123,10 +133,10 @@ export function UIOverlay({
       {/* ========================================================= */}
       {/* 2. HERO SECTION OVER FULL-WIDTH LANDSCAPE BACKDROP       */}
       {/* ========================================================= */}
-      <section className="w-full relative py-12 md:py-16 px-4 flex flex-col items-center justify-center text-center overflow-hidden">
+      <section className="w-full relative py-10 md:py-14 px-4 flex flex-col items-center justify-center text-center z-10">
         {/* Handwritten Style Annotations matching reference image */}
-        <div className="hidden lg:block absolute top-12 left-[12%] max-w-[170px] text-left pointer-events-none transform -rotate-6">
-          <p className="font-serif italic text-xs text-emerald-800/80 leading-snug">
+        <div className="hidden lg:block absolute top-8 left-[12%] max-w-[170px] text-left pointer-events-none transform -rotate-6">
+          <p className="font-serif italic text-xs text-emerald-900/80 leading-snug font-bold">
             From startups to global brands — everyone belongs here.
           </p>
           <svg className="w-12 h-8 text-emerald-700/60 mt-1" viewBox="0 0 50 30" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -135,8 +145,8 @@ export function UIOverlay({
           </svg>
         </div>
 
-        <div className="hidden lg:block absolute top-12 right-[14%] max-w-[160px] text-right pointer-events-none transform rotate-3">
-          <p className="font-serif italic text-xs text-emerald-800/80 leading-snug">
+        <div className="hidden lg:block absolute top-8 right-[14%] max-w-[160px] text-right pointer-events-none transform rotate-3">
+          <p className="font-serif italic text-xs text-emerald-900/80 leading-snug font-bold">
             A more open internet for builders
           </p>
           <svg className="w-12 h-8 text-emerald-700/60 mt-1 ml-auto" viewBox="0 0 50 30" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -151,7 +161,7 @@ export function UIOverlay({
             Own Your Space <br className="hidden sm:block" /> on the Internet 🌍
           </h1>
 
-          <p className="text-sm md:text-base text-slate-600 font-medium max-w-lg mb-6 leading-relaxed">
+          <p className="text-sm md:text-base text-slate-700 font-semibold max-w-lg mb-6 leading-relaxed">
             Stop renting attention. Claim your space once. Get discovered forever.
           </p>
 
@@ -164,7 +174,7 @@ export function UIOverlay({
           </button>
 
           {/* Stats Bar matching reference image */}
-          <div className="flex items-center justify-center gap-6 md:gap-10 px-6 py-2.5 bg-white/90 backdrop-blur-md rounded-full border border-emerald-100 shadow-md text-xs font-bold text-slate-700">
+          <div className="flex items-center justify-center gap-6 md:gap-10 px-6 py-2.5 bg-white/95 backdrop-blur-md rounded-full border border-emerald-100 shadow-md text-xs font-bold text-slate-700">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-emerald-600" />
               <span><strong className="font-extrabold text-slate-900">500+</strong> Founders onboard</span>
@@ -186,31 +196,42 @@ export function UIOverlay({
       {/* ========================================================= */}
       {/* 3. FULL-WIDTH 3D WORLD INTERFACE & FLOATING CONTROLS     */}
       {/* ========================================================= */}
-      <section id="world-section" className="w-full relative max-w-[1440px] px-2 md:px-6 mb-16 scroll-mt-20">
+      <section id="world-section" className="w-full relative max-w-[1440px] px-2 md:px-6 mb-16 scroll-mt-20 z-10">
         
-        {/* Main 3D World Canvas Container */}
-        <div className="relative w-full h-[720px] md:h-[780px] rounded-3xl overflow-hidden border border-emerald-200/80 shadow-2xl bg-[#cbf3df]">
+        {/* Main 3D World Canvas Container with Full-Width Illustrated BG */}
+        <div className="relative w-full h-[720px] md:h-[780px] rounded-3xl overflow-hidden border border-emerald-200/80 shadow-2xl bg-[#a7e8c3]">
+
+          {/* Exact Illustrated Background Image behind 3D Scene */}
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <img
+              src="/bg-landscape.jpg"
+              alt="LandOfSaaS Exact Illustrated Background"
+              className="w-full h-full object-cover filter brightness-105 contrast-105"
+            />
+          </div>
 
           {/* 3D WebGL Canvas Component */}
           {viewMode === 'map' ? (
-            <WorldScene
-              buildings={filteredBuildings}
-              selectedBuilding={selectedBuilding}
-              onSelectBuilding={(b) => {
-                onSelectBuilding(b);
-                if (b) {
-                  setCustomColor(b.customColor || b.owner?.color || b.accentColor || '#10b981');
-                  setCustomLogo(b.owner?.logo || '🚀');
-                  setCustomFloors(b.floors || 12);
-                  setCustomBrandName(b.owner?.name || '');
-                  setCustomWebsite(b.owner?.website || '');
-                }
-              }}
-              filterCluster={filterCluster}
-            />
+            <div className="relative z-10 w-full h-full">
+              <WorldScene
+                buildings={filteredBuildings}
+                selectedBuilding={selectedBuilding}
+                onSelectBuilding={(b) => {
+                  onSelectBuilding(b);
+                  if (b) {
+                    setCustomColor(b.customColor || b.owner?.color || b.accentColor || '#10b981');
+                    setCustomLogo(b.owner?.logo || '🚀');
+                    setCustomFloors(b.floors || 14);
+                    setCustomBrandName(b.owner?.name || '');
+                    setCustomWebsite(b.owner?.website || '');
+                  }
+                }}
+                filterCluster={filterCluster}
+              />
+            </div>
           ) : (
             /* List View Fallback */
-            <div className="w-full h-full overflow-y-auto p-8 bg-white/95 backdrop-blur-md">
+            <div className="relative z-10 w-full h-full overflow-y-auto p-8 bg-white/95 backdrop-blur-md">
               <h3 className="text-xl font-black text-slate-900 mb-4">All Available &amp; Owned Territory Slots</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {filteredBuildings.map(b => (
@@ -333,7 +354,6 @@ export function UIOverlay({
 
           {/* ----------------------------------------------------- */}
           {/* RIGHT FLOATING INSPECTION & CUSTOMIZATION MODAL       */}
-          {/* (Matching Reference Image Right Sidebar Card)         */}
           {/* ----------------------------------------------------- */}
           {selectedBuilding && (
             <div className="absolute top-4 right-4 z-30 max-w-sm w-full max-h-[92%] overflow-y-auto bg-white/95 backdrop-blur-2xl p-5 rounded-3xl border border-white/80 shadow-2xl text-slate-900 pointer-events-auto">
@@ -388,7 +408,7 @@ export function UIOverlay({
                 </div>
               </div>
 
-              {/* CUSTOMIZATION OPTIONS (User explicitly requested!) */}
+              {/* CUSTOMIZATION OPTIONS */}
               <div className="space-y-3 pt-1 border-t border-slate-100 mb-4">
                 <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900">
                   <Palette className="w-3.5 h-3.5 text-emerald-600" />

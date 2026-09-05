@@ -23,10 +23,10 @@ export function WorldScene({
     <div className="w-full h-full relative">
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
-        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping }}
-        style={{ background: '#cbf3df' }}
+        gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping }}
+        style={{ background: 'transparent' }}
       >
-        {/* Slightly reduced tilt perspective camera */}
+        {/* Camera Setup */}
         <PerspectiveCamera
           makeDefault
           fov={42}
@@ -35,28 +35,29 @@ export function WorldScene({
           far={220}
         />
 
-        {/* Orbit Controls with smooth damping */}
+        {/* Orbit Controls: enableZoom={false} allows natural page wheel scrolling */}
         <OrbitControls
           ref={controlsRef}
           enableDamping
           dampingFactor={0.06}
+          enableZoom={false}
           maxPolarAngle={Math.PI / 2.25}
           minDistance={12}
           maxDistance={70}
           target={[0, 0, 0]}
         />
 
-        {/* Fog Haze */}
-        <fogExp2 attach="fog" color="#cbf3df" density={0.01} />
+        {/* Soft Fog Haze */}
+        <fogExp2 attach="fog" color="#dcfce7" density={0.008} />
 
         {/* Lighting Setup */}
-        <ambientLight intensity={0.65} color="#dcfce7" />
-        <hemisphereLight skyColor="#e0f2fe" groundColor="#14532d" intensity={0.5} />
+        <ambientLight intensity={0.7} color="#f0fdf4" />
+        <hemisphereLight skyColor="#e0f2fe" groundColor="#166534" intensity={0.55} />
 
-        {/* Main Sunlight */}
+        {/* Sunlight */}
         <directionalLight
-          position={[-25, 40, 25]}
-          intensity={1.25}
+          position={[-25, 45, 25]}
+          intensity={1.3}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -69,9 +70,9 @@ export function WorldScene({
           shadow-bias={-0.0001}
         />
 
-        <directionalLight position={[20, 15, -20]} intensity={0.3} color="#93c5fd" />
+        <directionalLight position={[20, 15, -20]} intensity={0.35} color="#93c5fd" />
 
-        {/* Terrain & 5 Category Cluster Rings */}
+        {/* Terrain & Category Cluster Rings */}
         <TerrainEnvironment />
 
         {/* 3D Buildings Layer */}
