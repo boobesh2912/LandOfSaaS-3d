@@ -369,7 +369,6 @@ export function UIOverlay({
                     setCustomWebsite(b.owner?.website || '');
                   }
                 }}
-                filterCluster={filterCluster}
               />
             </div>
           ) : (
