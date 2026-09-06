@@ -26,7 +26,8 @@ import {
   HelpCircle,
   ExternalLink,
   LogIn,
-  AlertCircle
+  AlertCircle,
+  Menu
 } from 'lucide-react';
 import { WorldScene } from './WorldScene';
 import { PRESET_COLORS } from '../data/buildings';
@@ -78,6 +79,7 @@ export function UIOverlay({
   const [zoomLevel, setZoomLevel] = useState(100);
   const [activeLegalModal, setActiveLegalModal] = useState(null); // 'privacy' | 'terms' | 'rules' | null
   const [notificationModal, setNotificationModal] = useState(null); // { title: string, message: string, type: 'error' | 'success' | 'info' }
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const { isSignedIn } = useAuth();
   const { openSignIn } = useClerk();
@@ -181,7 +183,7 @@ export function UIOverlay({
   };
 
   return (
-    <div className="w-full flex flex-col items-center font-sans text-slate-900 bg-[#f3fbf6] min-h-screen relative">
+    <div className="w-full flex flex-col items-center font-sans text-slate-900 bg-[#f3fbf6] min-h-screen relative overflow-x-hidden">
 
       {/* Background Landscape Image (Full visibility around 3D island) */}
       <div className="absolute top-0 left-0 right-0 h-[680px] z-0 overflow-hidden pointer-events-none bg-gradient-to-b from-emerald-100/40 via-[#f3fbf6]/60 to-[#f3fbf6]">
@@ -197,26 +199,26 @@ export function UIOverlay({
       </div>
 
       {/* ========================================================= */}
-      {/* 1. TOP HEADER NAV (Header menu aligned to right side)     */}
+      {/* 1. TOP HEADER NAV (Fully Responsive Header for Mobile & Tab)*/}
       {/* ========================================================= */}
-      <header className="w-full max-w-7xl px-4 md:px-8 py-4 flex items-center justify-between gap-4 z-30">
+      <header className="w-full max-w-7xl px-3 sm:px-6 md:px-8 py-3.5 flex items-center justify-between gap-2 z-30">
         {/* Official Product Logo & Title on Left */}
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <img src="/logo.jpg" alt="LandOfSaaS Logo" className="w-10 h-10 rounded-xl object-cover shadow-md shadow-emerald-600/30 border border-white" />
+        <div className="flex items-center gap-2.5 cursor-pointer shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <img src="/logo.jpg" alt="LandOfSaaS Logo" className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover shadow-md shadow-emerald-600/30 border border-white" />
           <div>
-            <span className="text-lg font-black tracking-tight text-slate-900 leading-none block">LandOfSaaS</span>
-            <span className="text-[10px] text-slate-500 font-semibold block tracking-normal mt-0.5">Own. Build. Get Discovered.</span>
+            <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 leading-none block">LandOfSaaS</span>
+            <span className="text-[9px] sm:text-[10px] text-slate-500 font-semibold block tracking-normal mt-0.5">Own. Build. Get Discovered.</span>
           </div>
         </div>
 
-        {/* Header Navigation Menu aligned on RIGHT SIDE CORNER */}
-        <div className="flex items-center gap-3 ml-auto">
-          <nav className="flex items-center gap-1 font-bold text-xs text-slate-600 bg-white/90 backdrop-blur-md px-3 sm:px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm max-w-full overflow-x-auto">
-            <a href="#world-section" className="px-2.5 sm:px-3 py-1 hover:text-emerald-700 rounded-full transition-colors text-emerald-700 font-extrabold whitespace-nowrap">Explore 3D</a>
-            <button onClick={() => setActiveLegalModal('rules')} className="px-2.5 sm:px-3 py-1 hover:text-emerald-700 rounded-full transition-colors whitespace-nowrap">Rules</button>
-            <a href="#how-it-works" className="px-2.5 sm:px-3 py-1 hover:text-emerald-700 rounded-full transition-colors whitespace-nowrap">How it works</a>
-            <button onClick={() => setActiveLegalModal('privacy')} className="px-2.5 sm:px-3 py-1 hover:text-emerald-700 rounded-full transition-colors whitespace-nowrap">Privacy</button>
-            <button onClick={() => setActiveLegalModal('terms')} className="px-2.5 sm:px-3 py-1 hover:text-emerald-700 rounded-full transition-colors whitespace-nowrap">Terms</button>
+        {/* Desktop Header Navigation Menu (md+ screens) */}
+        <div className="hidden md:flex items-center gap-3 ml-auto">
+          <nav className="flex items-center gap-1 font-bold text-xs text-slate-600 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm">
+            <a href="#world-section" className="px-3 py-1 hover:text-emerald-700 rounded-full transition-colors text-emerald-700 font-extrabold whitespace-nowrap">Explore 3D</a>
+            <button onClick={() => setActiveLegalModal('rules')} className="px-3 py-1 hover:text-emerald-700 rounded-full transition-colors whitespace-nowrap">Rules</button>
+            <a href="#how-it-works" className="px-3 py-1 hover:text-emerald-700 rounded-full transition-colors whitespace-nowrap">How it works</a>
+            <button onClick={() => setActiveLegalModal('privacy')} className="px-3 py-1 hover:text-emerald-700 rounded-full transition-colors whitespace-nowrap">Privacy</button>
+            <button onClick={() => setActiveLegalModal('terms')} className="px-3 py-1 hover:text-emerald-700 rounded-full transition-colors whitespace-nowrap">Terms</button>
           </nav>
 
           <SignedIn>
@@ -225,51 +227,106 @@ export function UIOverlay({
             </div>
           </SignedIn>
         </div>
+
+        {/* Mobile & Tablet Controls (< md screens) */}
+        <div className="flex md:hidden items-center gap-2 shrink-0">
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
+          <button
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            className="p-2 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-sm text-slate-700 hover:text-emerald-600 focus:outline-none"
+            aria-label="Toggle Navigation Menu"
+          >
+            {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </header>
 
+      {/* Mobile Dropdown Navigation Bar */}
+      {mobileNavOpen && (
+        <div className="w-full max-w-7xl px-4 md:hidden z-30 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          <nav className="flex flex-col gap-1 p-3 bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-xl text-xs font-bold text-slate-700">
+            <a
+              href="#world-section"
+              onClick={() => setMobileNavOpen(false)}
+              className="px-3 py-2.5 hover:bg-emerald-50 rounded-xl text-emerald-700 font-extrabold flex items-center justify-between"
+            >
+              <span>Explore 3D Map</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </a>
+            <button
+              onClick={() => { setActiveLegalModal('rules'); setMobileNavOpen(false); }}
+              className="px-3 py-2.5 text-left hover:bg-slate-50 rounded-xl transition-colors"
+            >
+              Rules of the Board
+            </button>
+            <a
+              href="#how-it-works"
+              onClick={() => setMobileNavOpen(false)}
+              className="px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors"
+            >
+              How It Works
+            </a>
+            <button
+              onClick={() => { setActiveLegalModal('privacy'); setMobileNavOpen(false); }}
+              className="px-3 py-2.5 text-left hover:bg-slate-50 rounded-xl transition-colors"
+            >
+              Privacy Policy
+            </button>
+            <button
+              onClick={() => { setActiveLegalModal('terms'); setMobileNavOpen(false); }}
+              className="px-3 py-2.5 text-left hover:bg-slate-50 rounded-xl transition-colors"
+            >
+              Terms &amp; Conditions
+            </button>
+          </nav>
+        </div>
+      )}
+
       {/* ========================================================= */}
-      {/* 2. HERO SECTION                                           */}
+      {/* 2. HERO SECTION (Fully Mobile & Tablet Responsive)       */}
       {/* ========================================================= */}
-      <section className="w-full relative py-8 md:py-12 px-4 flex flex-col items-center justify-center text-center z-10">
+      <section className="w-full relative py-6 sm:py-10 md:py-12 px-3 sm:px-4 flex flex-col items-center justify-center text-center z-10">
         
         {/* Live Side Project Revenue Banner */}
-        <div className="mb-4 px-5 py-2 bg-white/95 backdrop-blur-md border border-emerald-300 rounded-full text-xs font-bold text-slate-800 shadow-md flex items-center gap-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>
-            This simple side project made <strong className="text-emerald-700 font-extrabold text-sm">${totalRevenueGenerated.toLocaleString()} USD</strong> since its launch {hoursSinceLaunch} hours ago
+        <div className="mb-4 px-3.5 sm:px-5 py-1.5 sm:py-2 bg-white/95 backdrop-blur-md border border-emerald-300 rounded-full text-[11px] sm:text-xs font-bold text-slate-800 shadow-md flex items-center gap-2 max-w-[95%]">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+          <span className="leading-snug">
+            This simple side project made <strong className="text-emerald-700 font-extrabold text-xs sm:text-sm">${totalRevenueGenerated.toLocaleString()} USD</strong> since launch {hoursSinceLaunch}h ago
           </span>
         </div>
 
         {/* Hero Title & Subtext */}
-        <div className="max-w-3xl mx-auto z-10 flex flex-col items-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-3">
+        <div className="max-w-3xl mx-auto z-10 flex flex-col items-center px-2">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-3">
             Own Your Space <br className="hidden sm:block" /> on the Internet 🌍
           </h1>
 
-          <p className="text-sm md:text-base text-slate-700 font-semibold max-w-lg mb-6 leading-relaxed">
+          <p className="text-xs sm:text-base text-slate-700 font-semibold max-w-sm sm:max-w-lg mb-6 leading-relaxed">
             Stop renting attention. Claim your 3D skyscraper space once. Get discovered forever.
           </p>
 
           <button
             onClick={() => document.getElementById('world-section')?.scrollIntoView({ behavior: 'smooth' })}
-            className="flex items-center gap-2 px-7 py-3.5 text-sm font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-full shadow-xl shadow-emerald-600/30 transition-all hover:scale-105 mb-8"
+            className="flex items-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 text-xs sm:text-sm font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-full shadow-xl shadow-emerald-600/30 transition-all hover:scale-105 mb-6 sm:mb-8"
           >
             Start Claiming Land
             <ArrowRight className="w-4 h-4" />
           </button>
 
-          {/* Stats Bar */}
-          <div className="flex items-center justify-center gap-6 md:gap-10 px-6 py-2.5 bg-white/95 backdrop-blur-md rounded-full border border-emerald-100 shadow-md text-xs font-bold text-slate-700">
+          {/* Stats Bar (Stacked on Mobile, Horizontal on Desktop/Tablet) */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-6 md:gap-10 px-5 sm:px-6 py-2.5 bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-full border border-emerald-100 shadow-md text-xs font-bold text-slate-700 w-full sm:w-auto">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-emerald-600" />
               <span><strong className="font-extrabold text-slate-900">5</strong> Founders onboard</span>
             </div>
-            <div className="h-4 w-px bg-slate-200"></div>
+            <div className="hidden sm:block h-4 w-px bg-slate-200"></div>
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-emerald-600" />
               <span><strong className="font-extrabold text-slate-900">48</strong> Territory Slots</span>
             </div>
-            <div className="h-4 w-px bg-slate-200"></div>
+            <div className="hidden sm:block h-4 w-px bg-slate-200"></div>
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-emerald-600" />
               <span><strong className="font-extrabold text-slate-900">$2</strong> Starting price</span>

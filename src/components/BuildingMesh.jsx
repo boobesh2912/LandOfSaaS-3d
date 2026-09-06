@@ -69,10 +69,11 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
     return tex;
   }, [logoContent, isImageLogo]);
 
-  // Scaled logo dimensions (Expanded size for prominent 4-sided rendering)
+  // Scaled logo dimensions (Front/Back vs Left/Right side faces)
   const logoScaleFactor = customLogoScale || 1.8;
-  const logoSizeW = Math.min(width * 0.96, logoScaleFactor * 1.15);
-  const logoSizeH = Math.min(mainTowerH * 0.75, logoSizeW * 1.15);
+  const logoFrontW = Math.min(width * 0.96, logoScaleFactor * 1.2);
+  const logoSideW = Math.min(depth * 0.96, logoScaleFactor * 1.2);
+  const logoSizeH = Math.min(mainTowerH * 0.8, logoScaleFactor * 1.2);
 
   return (
     <group
@@ -171,30 +172,30 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         );
       })}
 
-      {/* 4-Sided Company Logo Signage via Native 3D WebGL Planes (Prominent Front, Back, Left, Right) */}
+      {/* 4-Sided Company Logo Signage via Native 3D WebGL Planes (Front, Back, Left, Right) */}
       {logoTexture && (
         <group position={[0, centerY, 0]}>
-          {/* Front Facade 3D Logo Mesh */}
-          <mesh position={[0, 0, depth / 2 + 0.02]} rotation={[0, 0, 0]}>
-            <planeGeometry args={[logoSizeW, logoSizeH]} />
+          {/* 1. Front Facade 3D Logo Mesh */}
+          <mesh position={[0, 0, depth / 2 + 0.03]} rotation={[0, 0, 0]}>
+            <planeGeometry args={[logoFrontW, logoSizeH]} />
             <meshBasicMaterial map={logoTexture} transparent side={THREE.FrontSide} />
           </mesh>
 
-          {/* Back Facade 3D Logo Mesh */}
-          <mesh position={[0, 0, -depth / 2 - 0.02]} rotation={[0, Math.PI, 0]}>
-            <planeGeometry args={[logoSizeW, logoSizeH]} />
+          {/* 2. Back Facade 3D Logo Mesh */}
+          <mesh position={[0, 0, -depth / 2 - 0.03]} rotation={[0, Math.PI, 0]}>
+            <planeGeometry args={[logoFrontW, logoSizeH]} />
             <meshBasicMaterial map={logoTexture} transparent side={THREE.FrontSide} />
           </mesh>
 
-          {/* Left Facade 3D Logo Mesh */}
-          <mesh position={[-width / 2 - 0.02, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
-            <planeGeometry args={[logoSizeW, logoSizeH]} />
+          {/* 3. Left Facade 3D Logo Mesh */}
+          <mesh position={[-width / 2 - 0.03, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+            <planeGeometry args={[logoSideW, logoSizeH]} />
             <meshBasicMaterial map={logoTexture} transparent side={THREE.FrontSide} />
           </mesh>
 
-          {/* Right Facade 3D Logo Mesh */}
-          <mesh position={[width / 2 + 0.02, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-            <planeGeometry args={[logoSizeW, logoSizeH]} />
+          {/* 4. Right Facade 3D Logo Mesh */}
+          <mesh position={[width / 2 + 0.03, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+            <planeGeometry args={[logoSideW, logoSizeH]} />
             <meshBasicMaterial map={logoTexture} transparent side={THREE.FrontSide} />
           </mesh>
         </group>
@@ -239,18 +240,28 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         </group>
       )}
 
-      {/* Floating Top Badge Overlay (ONLY for claimed/owned buildings, Unclaimed badges removed) */}
+      {/* Floating Top Badge Overlay (Bigger logo on top, SaaS name underneath) */}
       {(status === 'owned' || isClaimed) && (
         <Html
-          position={[0, slabH + height + crownH + (height >= 8 ? 2.2 : 1.4), 0]}
+          position={[0, slabH + height + crownH + (height >= 8 ? 2.5 : 1.8), 0]}
           center
-          distanceFactor={28}
+          distanceFactor={26}
         >
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full shadow-xl border border-slate-200 text-xs font-black text-slate-900 pointer-events-none whitespace-nowrap transform hover:scale-105 transition-all">
-            {isImageLogo && (
-              <img src={logoContent} alt="Logo" className="w-4 h-4 object-contain rounded-full" />
+          <div className="flex flex-col items-center pointer-events-none transform hover:scale-105 transition-all">
+            {/* Bigger Logo Icon on Top */}
+            {isImageLogo ? (
+              <div className="w-12 h-12 p-1 bg-white backdrop-blur-md rounded-2xl shadow-2xl border-2 border-emerald-500/80 flex items-center justify-center mb-1 bg-white">
+                <img src={logoContent} alt="Brand Logo" className="w-full h-full object-contain rounded-xl" />
+              </div>
+            ) : (
+              <div className="w-10 h-10 p-1 bg-emerald-600 text-white rounded-2xl shadow-xl border-2 border-white flex items-center justify-center text-lg font-black mb-1">
+                🏢
+              </div>
             )}
-            <span>{owner?.name || name}</span>
+            {/* SaaS Name Underneath Logo */}
+            <div className="px-3 py-1 bg-slate-900/95 text-white backdrop-blur-md rounded-full shadow-2xl border border-slate-700 text-xs font-black tracking-tight whitespace-nowrap">
+              {owner?.name || name}
+            </div>
           </div>
         </Html>
       )}
