@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 import { BUILDINGS_DATA } from './src/data/buildings.js';
 
 dotenv.config();
@@ -8,18 +9,39 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Initialize Supabase Client
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zbghycarahaxdwxhziiq.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_U-ihIqExyPZfkcypQuKpYQ_D-Iu7Vaz';
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 app.use(cors());
 app.use(express.json());
 
-// In-Memory Authoritative Building Database (Production should use PostgreSQL / MongoDB)
+// In-Memory Authoritative Building Database (Synced with Supabase)
 let buildingsState = [...BUILDINGS_DATA];
 
 // ---------------------------------------------------------
-// 1. GET ALL BUILDINGS (Server Source of Truth)
+// 1. GET ALL BUILDINGS (Server & Supabase Source of Truth)
 // ---------------------------------------------------------
-app.get('/api/buildings', (req, res) => {
+app.get('/api/buildings', async (req, res) => {
+  try {
+    const { data: dbBuildings, error } = await supabase.from('buildings').select('*');
+    if (!error && dbBuildings && dbBuildings.length > 0) {
+      // Merge database claimed state into building list
+      dbBuildings.forEach(dbB => {
+        const idx = buildingsState.findIndex(b => b.id === dbB.id);
+        if (idx !== -1) {
+          buildingsState[idx] = { ...buildingsState[idx], ...dbB };
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('[Supabase Fetch Warning]: Falling back to local state', err.message);
+  }
   return res.json({ success: true, buildings: buildingsState });
 });
+
 
 // ---------------------------------------------------------
 // 2. CREATE DODO PAYMENT SESSION (Server-Side Price Authority)
@@ -126,7 +148,7 @@ app.post('/api/create-payment-session', async (req, res) => {
 // ---------------------------------------------------------
 // 3. DODO PAYMENTS WEBHOOK RECEIVER (Payment Verification & Final Claim)
 // ---------------------------------------------------------
-app.post('/api/webhooks/dodo', (req, res) => {
+app.post('/api/webhooks/dodo', async (req, res) => {
   try {
     const event = req.body;
     console.log('[Dodo Webhook Event Received]:', event.type || event.event);
@@ -137,24 +159,33 @@ app.post('/api/webhooks/dodo', (req, res) => {
       const { building_id, bid_amount, brand_name, website_url, color, logo, floors } = metadata;
 
       if (building_id) {
+        const updatedBuilding = {
+          id: building_id,
+          status: 'owned',
+          currentPrice: Number(bid_amount) || 5,
+          customColor: color || '#10b981',
+          floors: Number(floors) || 14,
+          height: Math.max(2.5, (Number(floors) || 14) * 0.35),
+          owner: {
+            name: brand_name || 'New Owner',
+            logo: logo || '🚀',
+            website: website_url || 'https://mystartup.com',
+            color: color || '#10b981'
+          }
+        };
+
         buildingsState = buildingsState.map((b) =>
-          b.id === building_id
-            ? {
-                ...b,
-                status: 'owned',
-                currentPrice: Number(bid_amount) || b.currentPrice + 5,
-                customColor: color || '#10b981',
-                floors: Number(floors) || 14,
-                height: Math.max(2.5, (Number(floors) || 14) * 0.35),
-                owner: {
-                  name: brandName || 'New Owner',
-                  logo: logo || '🚀',
-                  website: website_url || 'https://mystartup.com',
-                  color: color || '#10b981'
-                }
-              }
-            : b
+          b.id === building_id ? { ...b, ...updatedBuilding } : b
         );
+
+        // Upsert claim state into Supabase Database
+        try {
+          await supabase.from('buildings').upsert(updatedBuilding);
+          console.log(`[Supabase DB Sync]: Building ${building_id} persisted to database.`);
+        } catch (dbErr) {
+          console.warn('[Supabase DB Sync Warning]:', dbErr.message);
+        }
+
         console.log(`[Dodo Webhook Success]: Building ${building_id} updated to owner ${brand_name} at $${bid_amount}`);
       }
     }
@@ -165,6 +196,7 @@ app.post('/api/webhooks/dodo', (req, res) => {
     return res.status(400).json({ error: 'Webhook processing failed' });
   }
 });
+
 
 export default app;
 

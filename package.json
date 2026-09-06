@@ -13,6 +13,7 @@
     "@clerk/clerk-react": "^5.61.9",
     "@react-three/drei": "^9.121.5",
     "@react-three/fiber": "^8.17.14",
+    "@supabase/supabase-js": "^2.115.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

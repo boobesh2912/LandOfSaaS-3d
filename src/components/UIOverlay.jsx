@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import {
   Building2,
   ArrowRight,
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 import { WorldScene } from './WorldScene';
 import { PRESET_COLORS, PRESET_LOGOS } from '../data/buildings';
+
 
 // Helper to convert hex to RGB object
 function hexToRgb(hex) {
@@ -168,12 +170,20 @@ export function UIOverlay({
             />
           </div>
 
-          <button
-            onClick={() => setIsSignedIn(!isSignedIn)}
-            className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer"
-          >
-            {isSignedIn ? 'Account' : 'Sign in'}
-          </button>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
+                Sign in
+              </button>
+            </SignInButton>
+          </SignedOut>
+
+          <SignedIn>
+            <div className="flex items-center gap-2">
+              <UserButton />
+            </div>
+          </SignedIn>
+
 
           <button
             onClick={() => document.getElementById('world-section')?.scrollIntoView({ behavior: 'smooth' })}
