@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -19,7 +19,8 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
     customColor,
     tier,
     badgeLabel,
-    floors = 14
+    floors = 16,
+    customLogoScale = 1.4
   } = building;
 
   // Smooth lerp hover lift animation
@@ -34,8 +35,6 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
   });
 
   // Building Color Priority:
-  // If building is customized / claimed: use customColor or owner.color
-  // If building is available (unclaimed): default to clean uncolored slate gray (#cbd5e1)
   const isClaimed = status === 'owned' || Boolean(customColor);
   const baseColor = customColor
     ? customColor
@@ -45,21 +44,34 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
 
   const glowColor = isClaimed ? baseColor : '#38bdf8';
 
-  // Architectural Dimensions
+  // Architectural Dimensions (Enhanced height for skyscraper tower feel)
   const slabW = width + 0.6;
   const slabD = depth + 0.6;
   const slabH = 0.3;
 
   const lobbyW = width + 0.2;
   const lobbyD = depth + 0.2;
-  const lobbyH = Math.min(1.2, height * 0.25);
+  const lobbyH = Math.min(1.4, height * 0.22);
 
   const mainTowerH = height - lobbyH;
-  const crownH = 0.5;
+  const crownH = 0.6;
   const centerY = slabH + lobbyH + mainTowerH / 2;
 
   const logoContent = owner?.logo || building.customLogo;
   const isImageLogo = typeof logoContent === 'string' && (logoContent.startsWith('data:') || logoContent.startsWith('http') || logoContent.startsWith('/'));
+
+  // Load 3D WebGL Texture for crisp 4-sided facade rendering (No bleed-through / occlusion bug)
+  const logoTexture = useMemo(() => {
+    if (!isImageLogo) return null;
+    const loader = new THREE.TextureLoader();
+    const tex = loader.load(logoContent);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }, [logoContent, isImageLogo]);
+
+  // Scaled logo dimensions based on customLogoScale
+  const logoSizeW = Math.min(width * 0.85, (customLogoScale || 1.4) * 0.8);
+  const logoSizeH = logoSizeW;
 
   return (
     <group
@@ -147,9 +159,9 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         />
       </mesh>
 
-      {/* Horizontal Floor Bands */}
-      {Array.from({ length: Math.min(10, Math.floor(floors / 3)) }).map((_, i) => {
-        const yPos = slabH + lobbyH + (i + 1) * (mainTowerH / (Math.min(10, Math.floor(floors / 3)) + 1));
+      {/* Horizontal Architectural Floor Bands */}
+      {Array.from({ length: Math.min(12, Math.floor(floors / 3)) }).map((_, i) => {
+        const yPos = slabH + lobbyH + (i + 1) * (mainTowerH / (Math.min(12, Math.floor(floors / 3)) + 1));
         return (
           <mesh key={i} position={[0, yPos, 0]}>
             <boxGeometry args={[width * 1.04, 0.12, depth * 1.04]} />
@@ -158,36 +170,32 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         );
       })}
 
-      {/* 4-Sided Company Logo Signage on Building Facades (Front, Back, Left, Right) */}
-      {isImageLogo && (
-        <group>
-          {/* Front Facade Sign */}
-          <Html transform distanceFactor={14} position={[0, centerY + mainTowerH * 0.2, depth / 2 + 0.04]} rotation={[0, 0, 0]}>
-            <div className="w-12 h-12 bg-white/95 p-1 rounded-xl shadow-2xl border-2 border-white flex items-center justify-center pointer-events-none">
-              <img src={logoContent} alt="Logo" className="w-full h-full object-contain rounded-lg" />
-            </div>
-          </Html>
+      {/* 4-Sided Company Logo Signage via Native 3D WebGL Planes (No Depth Bleed-through Bug) */}
+      {logoTexture && (
+        <group position={[0, centerY, 0]}>
+          {/* Front Facade 3D Logo Mesh */}
+          <mesh position={[0, 0, depth / 2 + 0.02]} rotation={[0, 0, 0]}>
+            <planeGeometry args={[logoSizeW, logoSizeH]} />
+            <meshBasicMaterial map={logoTexture} transparent side={THREE.FrontSide} />
+          </mesh>
 
-          {/* Back Facade Sign */}
-          <Html transform distanceFactor={14} position={[0, centerY + mainTowerH * 0.2, -depth / 2 - 0.04]} rotation={[0, Math.PI, 0]}>
-            <div className="w-12 h-12 bg-white/95 p-1 rounded-xl shadow-2xl border-2 border-white flex items-center justify-center pointer-events-none">
-              <img src={logoContent} alt="Logo" className="w-full h-full object-contain rounded-lg" />
-            </div>
-          </Html>
+          {/* Back Facade 3D Logo Mesh */}
+          <mesh position={[0, 0, -depth / 2 - 0.02]} rotation={[0, Math.PI, 0]}>
+            <planeGeometry args={[logoSizeW, logoSizeH]} />
+            <meshBasicMaterial map={logoTexture} transparent side={THREE.FrontSide} />
+          </mesh>
 
-          {/* Left Facade Sign */}
-          <Html transform distanceFactor={14} position={[-width / 2 - 0.04, centerY + mainTowerH * 0.2, 0]} rotation={[0, -Math.PI / 2, 0]}>
-            <div className="w-12 h-12 bg-white/95 p-1 rounded-xl shadow-2xl border-2 border-white flex items-center justify-center pointer-events-none">
-              <img src={logoContent} alt="Logo" className="w-full h-full object-contain rounded-lg" />
-            </div>
-          </Html>
+          {/* Left Facade 3D Logo Mesh */}
+          <mesh position={[-width / 2 - 0.02, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+            <planeGeometry args={[logoSizeW, logoSizeH]} />
+            <meshBasicMaterial map={logoTexture} transparent side={THREE.FrontSide} />
+          </mesh>
 
-          {/* Right Facade Sign */}
-          <Html transform distanceFactor={14} position={[width / 2 + 0.04, centerY + mainTowerH * 0.2, 0]} rotation={[0, Math.PI / 2, 0]}>
-            <div className="w-12 h-12 bg-white/95 p-1 rounded-xl shadow-2xl border-2 border-white flex items-center justify-center pointer-events-none">
-              <img src={logoContent} alt="Logo" className="w-full h-full object-contain rounded-lg" />
-            </div>
-          </Html>
+          {/* Right Facade 3D Logo Mesh */}
+          <mesh position={[width / 2 + 0.02, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+            <planeGeometry args={[logoSizeW, logoSizeH]} />
+            <meshBasicMaterial map={logoTexture} transparent side={THREE.FrontSide} />
+          </mesh>
         </group>
       )}
 

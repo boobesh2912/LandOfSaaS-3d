@@ -25,7 +25,8 @@ import {
   FileText,
   HelpCircle,
   ExternalLink,
-  LogIn
+  LogIn,
+  AlertCircle
 } from 'lucide-react';
 import { WorldScene } from './WorldScene';
 import { PRESET_COLORS } from '../data/buildings';
@@ -64,6 +65,8 @@ export function UIOverlay({
   setCustomColor,
   customLogo,
   setCustomLogo,
+  customLogoScale,
+  setCustomLogoScale,
   customFloors,
   setCustomFloors,
   onClaimOrOutbid,
@@ -97,17 +100,25 @@ export function UIOverlay({
     return matchesCluster && matchesSearch;
   });
 
-  // Calculate minimum outbid price for selected building
+  // Calculate minimum outbid price & upgrade difference for selected building
   const minOutbid = selectedBuilding
     ? selectedBuilding.status === 'owned'
       ? selectedBuilding.currentPrice + 5
       : selectedBuilding.basePrice
     : 0;
 
+  const currentPrice = selectedBuilding?.currentPrice || 0;
+  const upgradeDifference = selectedBuilding
+    ? selectedBuilding.status === 'owned'
+      ? Math.max(1, minOutbid - currentPrice)
+      : minOutbid
+    : 0;
+
   // Selected building current color / height / logo display
   const activeColor = customColor || selectedBuilding?.customColor || selectedBuilding?.owner?.color || '#10b981';
   const activeLogo = customLogo || selectedBuilding?.customLogo || selectedBuilding?.owner?.logo;
-  const activeFloors = customFloors || selectedBuilding?.floors || 14;
+  const activeFloors = customFloors || selectedBuilding?.floors || 16;
+  const activeLogoScale = customLogoScale || selectedBuilding?.customLogoScale || 1.4;
 
   const currentRgb = hexToRgb(activeColor);
 
@@ -133,13 +144,22 @@ export function UIOverlay({
     reader.readAsDataURL(file);
   };
 
-  // Claim Button Handler with Clerk Auth Protection
+  // Claim / Upgrade Action Handler with Strict Form Validation & Clerk Auth
   const handleClaimClick = () => {
+    if (!customBrandName || !customBrandName.trim()) {
+      alert('Please enter your Company / SaaS Name before placing your bid!');
+      return;
+    }
+    if (!customWebsite || !customWebsite.trim()) {
+      alert('Please enter your Website URL before placing your bid!');
+      return;
+    }
+
     if (!isSignedIn) {
       openSignIn();
       return;
     }
-    onClaimOrOutbid(selectedBuilding, minOutbid);
+    onClaimOrOutbid(selectedBuilding, upgradeDifference);
   };
 
   return (
@@ -162,11 +182,9 @@ export function UIOverlay({
       {/* 1. TOP HEADER NAV                                         */}
       {/* ========================================================= */}
       <header className="w-full max-w-7xl px-4 md:px-8 py-4 flex items-center justify-between gap-4 z-30">
-        {/* Brand Logo */}
-        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black shadow-md shadow-emerald-600/30">
-            <Building2 className="w-5 h-5" />
-          </div>
+        {/* Official Product Logo & Title */}
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <img src="/logo.jpg" alt="LandOfSaaS Logo" className="w-10 h-10 rounded-xl object-cover shadow-md shadow-emerald-600/30 border border-white" />
           <div>
             <span className="text-lg font-black tracking-tight text-slate-900 leading-none block">LandOfSaaS</span>
             <span className="text-[10px] text-slate-500 font-semibold block tracking-normal mt-0.5">Own. Build. Get Discovered.</span>
@@ -182,7 +200,7 @@ export function UIOverlay({
           <button onClick={() => setActiveLegalModal('terms')} className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Terms</button>
         </nav>
 
-        {/* Right Search + User Profile Avatar (NO sign-in button on home page) */}
+        {/* Right Search + User Profile Avatar */}
         <div className="flex items-center gap-3 z-30">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/90 border border-slate-200 rounded-full text-xs text-slate-500 shadow-sm focus-within:border-emerald-500 transition-all">
             <Search className="w-3.5 h-3.5 text-slate-400" />
@@ -223,27 +241,6 @@ export function UIOverlay({
           </span>
         </div>
 
-        {/* Handwritten Style Annotations */}
-        <div className="hidden lg:block absolute top-8 left-[12%] max-w-[170px] text-left pointer-events-none transform -rotate-6">
-          <p className="font-serif italic text-xs text-emerald-900/80 leading-snug font-bold">
-            From startups to global brands — everyone belongs here.
-          </p>
-          <svg className="w-12 h-8 text-emerald-700/60 mt-1" viewBox="0 0 50 30" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M 5 5 Q 25 25 45 15" strokeDasharray="3 3" />
-            <path d="M 38 18 L 45 15 L 42 8" />
-          </svg>
-        </div>
-
-        <div className="hidden lg:block absolute top-8 right-[14%] max-w-[160px] text-right pointer-events-none transform rotate-3">
-          <p className="font-serif italic text-xs text-emerald-900/80 leading-snug font-bold">
-            A more open internet for builders
-          </p>
-          <svg className="w-12 h-8 text-emerald-700/60 mt-1 ml-auto" viewBox="0 0 50 30" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M 45 5 Q 25 25 5 15" strokeDasharray="3 3" />
-            <path d="M 12 18 L 5 15 L 8 8" />
-          </svg>
-        </div>
-
         {/* Hero Title & Subtext */}
         <div className="max-w-3xl mx-auto z-10 flex flex-col items-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-3">
@@ -251,7 +248,7 @@ export function UIOverlay({
           </h1>
 
           <p className="text-sm md:text-base text-slate-700 font-semibold max-w-lg mb-6 leading-relaxed">
-            Stop renting attention. Claim your 3D space once. Get discovered forever.
+            Stop renting attention. Claim your 3D skyscraper space once. Get discovered forever.
           </p>
 
           <button
@@ -312,7 +309,8 @@ export function UIOverlay({
                   if (b) {
                     setCustomColor(b.customColor || b.owner?.color || '#10b981');
                     setCustomLogo(b.customLogo || b.owner?.logo);
-                    setCustomFloors(b.floors || 14);
+                    setCustomLogoScale(b.customLogoScale || 1.4);
+                    setCustomFloors(b.floors || 16);
                     setCustomBrandName(b.owner?.name || '');
                     setCustomWebsite(b.owner?.website || '');
                   }
@@ -467,7 +465,7 @@ export function UIOverlay({
                     {typeof activeLogo === 'string' && activeLogo.startsWith('data:') ? (
                       <img src={activeLogo} alt="Logo" className="w-7 h-7 object-contain rounded" />
                     ) : (
-                      <span className="text-[10px] font-black">4-FACADE LOGO</span>
+                      <span className="text-[9px] font-black">3D FACADE LOGO</span>
                     )}
                     <span className="text-[9px] font-black tracking-wider uppercase mt-1 opacity-90">{activeFloors}F</span>
                   </div>
@@ -475,19 +473,19 @@ export function UIOverlay({
                 </div>
               </div>
 
-              {/* Stats Table */}
-              <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-slate-50 rounded-xl border border-slate-200/80 text-center mb-3">
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase">Size</span>
-                  <span className="text-xs font-black text-slate-800">{selectedBuilding.sizeLabel}</span>
+              {/* Clear Pricing Breakdown (Pay Only Difference to Upgrade) */}
+              <div className="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200 mb-3 space-y-1 text-xs">
+                <div className="flex items-center justify-between text-slate-600 font-bold">
+                  <span>Current Building Price:</span>
+                  <span>${currentPrice} USD</span>
                 </div>
-                <div className="border-x border-slate-200">
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase">Min Price</span>
-                  <span className="text-xs font-black text-slate-800">${selectedBuilding.basePrice}</span>
+                <div className="flex items-center justify-between text-slate-600 font-bold">
+                  <span>New Target Price:</span>
+                  <span>${minOutbid} USD</span>
                 </div>
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase">Current Bid</span>
-                  <span className="text-xs font-black text-emerald-700">${selectedBuilding.status === 'owned' ? selectedBuilding.currentPrice : 0}</span>
+                <div className="flex items-center justify-between text-emerald-900 font-black pt-1 border-t border-emerald-200/60 text-sm">
+                  <span>Difference to Pay Today:</span>
+                  <span className="text-emerald-700">${upgradeDifference} USD</span>
                 </div>
               </div>
 
@@ -498,9 +496,11 @@ export function UIOverlay({
                   <span>Customize Building Appearance</span>
                 </div>
 
-                {/* Brand Name Input */}
+                {/* Brand Name Input (Required) */}
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Company / Brand Name</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                    Company / SaaS Name <span className="text-red-500">* Required</span>
+                  </label>
                   <input
                     type="text"
                     value={customBrandName}
@@ -509,14 +509,17 @@ export function UIOverlay({
                       selectedBuilding.customBrandName = e.target.value;
                     }}
                     placeholder="e.g. Acme Corp"
-                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
+                    required
+                    className={`w-full px-3 py-1.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none ${
+                      !customBrandName ? 'border-amber-300 focus:border-amber-500' : 'border-slate-200 focus:border-emerald-600'
+                    }`}
                   />
                 </div>
 
-                {/* Color Swatches + RGB Color Bar */}
+                {/* Color Swatches & Flexible Visual Color Picker */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[10px] font-bold text-slate-500">Wall Color (Swatches / Native RGB Picker)</label>
+                    <label className="text-[10px] font-bold text-slate-500">Wall Color (Swatches / Visual Picker / RGB)</label>
                     <span className="text-[10px] font-mono font-bold text-slate-600">{activeColor.toUpperCase()}</span>
                   </div>
 
@@ -538,7 +541,7 @@ export function UIOverlay({
                     ))}
                   </div>
 
-                  {/* Native Color Picker + HEX input */}
+                  {/* Native Visual Color Picker + HEX input */}
                   <div className="flex items-center gap-2 mb-2">
                     <input
                       type="color"
@@ -560,67 +563,13 @@ export function UIOverlay({
                       className="flex-1 px-3 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
                     />
                   </div>
-
-                  {/* Interactive RGB Sliders */}
-                  <div className="space-y-1.5 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-bold text-red-600 w-3">R</span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="255"
-                        value={currentRgb.r}
-                        onChange={(e) => {
-                          const newHex = rgbToHex(parseInt(e.target.value), currentRgb.g, currentRgb.b);
-                          setCustomColor(newHex);
-                          selectedBuilding.customColor = newHex;
-                        }}
-                        className="w-full accent-red-500 h-1 bg-slate-200 rounded-lg cursor-pointer"
-                      />
-                      <span className="text-[9px] font-mono text-slate-600 w-6 text-right">{currentRgb.r}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-bold text-green-600 w-3">G</span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="255"
-                        value={currentRgb.g}
-                        onChange={(e) => {
-                          const newHex = rgbToHex(currentRgb.r, parseInt(e.target.value), currentRgb.b);
-                          setCustomColor(newHex);
-                          selectedBuilding.customColor = newHex;
-                        }}
-                        className="w-full accent-green-500 h-1 bg-slate-200 rounded-lg cursor-pointer"
-                      />
-                      <span className="text-[9px] font-mono text-slate-600 w-6 text-right">{currentRgb.g}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-bold text-blue-600 w-3">B</span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="255"
-                        value={currentRgb.b}
-                        onChange={(e) => {
-                          const newHex = rgbToHex(currentRgb.r, currentRgb.g, parseInt(e.target.value));
-                          setCustomColor(newHex);
-                          selectedBuilding.customColor = newHex;
-                        }}
-                        className="w-full accent-blue-500 h-1 bg-slate-200 rounded-lg cursor-pointer"
-                      />
-                      <span className="text-[9px] font-mono text-slate-600 w-6 text-right">{currentRgb.b}</span>
-                    </div>
-                  </div>
                 </div>
 
-                {/* Upload Company Logo File Dropzone (Rendered on 4 Sides of 3D Building) */}
+                {/* Upload Company Logo File Dropzone (Renders cleanly on 4 Facades) */}
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1">Company Logo (Renders on 4 Building Facades)</label>
                   <label className="w-full h-20 border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl bg-slate-50 hover:bg-emerald-50/50 flex flex-col items-center justify-center cursor-pointer transition-all p-2 text-center">
-                    {activeLogo && activeLogo.startsWith('data:') ? (
+                    {activeLogo && typeof activeLogo === 'string' && activeLogo.startsWith('data:') ? (
                       <div className="flex items-center gap-2">
                         <img src={activeLogo} alt="Uploaded Logo" className="w-9 h-9 object-contain rounded-lg shadow-sm border bg-white" />
                         <span className="text-[11px] font-bold text-emerald-800">4-Side Facade Logo Uploaded ✓</span>
@@ -628,7 +577,7 @@ export function UIOverlay({
                     ) : (
                       <>
                         <Upload className="w-5 h-5 text-emerald-600 mb-1" />
-                        <span className="text-xs font-bold text-slate-700">Upload Company Logo</span>
+                        <span className="text-xs font-bold text-slate-700">Upload Company Logo Image</span>
                         <span className="text-[9px] text-slate-400 font-medium">PNG, SVG or JPG up to 2MB</span>
                       </>
                     )}
@@ -641,18 +590,49 @@ export function UIOverlay({
                   </label>
                 </div>
 
-                {/* Grow Building Height */}
+                {/* Logo Size / Scale Slider */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] font-bold text-slate-500">Grow Building (Floors &amp; Height)</label>
+                    <label className="text-[10px] font-bold text-slate-500">Logo Size on Building Facades</label>
+                    <span className="text-xs font-black text-emerald-700">{activeLogoScale}x</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {[
+                      { scale: 1.0, label: 'Small' },
+                      { scale: 1.5, label: 'Medium' },
+                      { scale: 2.0, label: 'Large' },
+                      { scale: 2.6, label: 'XL' }
+                    ].map(tier => (
+                      <button
+                        key={tier.scale}
+                        onClick={() => {
+                          setCustomLogoScale(tier.scale);
+                          selectedBuilding.customLogoScale = tier.scale;
+                        }}
+                        className={`flex-1 py-1 px-1.5 rounded-lg text-[10px] font-bold transition-all border ${
+                          activeLogoScale === tier.scale
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {tier.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grow Building Height (Skyscraper Towers) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-slate-500">Grow Tower (Floors &amp; Height)</label>
                     <span className="text-xs font-black text-emerald-700">{activeFloors} Floors</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {[
-                      { floors: 6, label: 'Small (6F)', h: 2.5 },
-                      { floors: 14, label: 'Medium (14F)', h: 5.0 },
-                      { floors: 24, label: 'Large (24F)', h: 8.0 },
-                      { floors: 38, label: 'Tower (38F)', h: 11.5 }
+                      { floors: 8, label: 'Small (8F)', h: 4.0 },
+                      { floors: 18, label: 'Medium (18F)', h: 8.0 },
+                      { floors: 30, label: 'Large (30F)', h: 13.0 },
+                      { floors: 48, label: 'Tower (48F)', h: 18.5 }
                     ].map(tier => (
                       <button
                         key={tier.floors}
@@ -673,9 +653,11 @@ export function UIOverlay({
                   </div>
                 </div>
 
-                {/* Website URL Input */}
+                {/* Website URL Input (Required) */}
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Website URL</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                    Website URL <span className="text-red-500">* Required</span>
+                  </label>
                   <div className="relative">
                     <Globe className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
                     <input
@@ -683,22 +665,16 @@ export function UIOverlay({
                       value={customWebsite}
                       onChange={(e) => setCustomWebsite(e.target.value)}
                       placeholder="https://yourwebsite.com"
-                      className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
+                      required
+                      className={`w-full pl-8 pr-3 py-1.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none ${
+                        !customWebsite ? 'border-amber-300 focus:border-amber-500' : 'border-slate-200 focus:border-emerald-600'
+                      }`}
                     />
-                  </div>
-                </div>
-
-                {/* Validated Price Display */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Server-Validated Bid Price (USD)</label>
-                  <div className="w-full px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-black text-emerald-800 flex items-center justify-between">
-                    <span>Minimum Required:</span>
-                    <span>${minOutbid} USD</span>
                   </div>
                 </div>
               </div>
 
-              {/* Action CTA Button (Requires Clerk Sign In if signed out) */}
+              {/* Action CTA Button */}
               <div className="space-y-2">
                 <button
                   onClick={handleClaimClick}
@@ -726,12 +702,12 @@ export function UIOverlay({
                   ) : !isSignedIn ? (
                     <>
                       <LogIn className="w-4 h-4" />
-                      Sign In &amp; Pay via Dodo (${minOutbid})
+                      Sign In &amp; Pay (${upgradeDifference})
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      Place Bid &amp; Pay via Dodo (${minOutbid})
+                      Pay Difference via Dodo (${upgradeDifference})
                     </>
                   )}
                 </button>
@@ -779,7 +755,7 @@ export function UIOverlay({
             </div>
             <h3 className="text-base font-black text-slate-900 mb-1.5">3. Customize</h3>
             <p className="text-xs text-slate-600 font-medium leading-relaxed">
-              Upload your custom company logo for all 4 facades, choose your RGB wall color, website link, and grow building height.
+              Upload your company logo for 3D facades, choose wall color, website link, and grow tower height.
             </p>
           </div>
 
@@ -799,7 +775,7 @@ export function UIOverlay({
       <footer className="w-full border-t border-emerald-100 bg-white py-10 px-4 md:px-8 flex flex-col items-center justify-between gap-6 text-xs text-slate-500 font-semibold z-20">
         <div className="w-full max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-slate-900 font-black">
-            <Building2 className="w-4 h-4 text-emerald-600" />
+            <img src="/logo.jpg" alt="Logo" className="w-5 h-5 rounded object-cover" />
             <span>LandOfSaaS</span>
           </div>
 
