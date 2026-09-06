@@ -20,11 +20,14 @@ import {
   ListFilter,
   Flame,
   Maximize2,
-  Loader2
+  Loader2,
+  ShieldCheck,
+  FileText,
+  HelpCircle,
+  ExternalLink
 } from 'lucide-react';
 import { WorldScene } from './WorldScene';
 import { PRESET_COLORS, PRESET_LOGOS } from '../data/buildings';
-
 
 // Helper to convert hex to RGB object
 function hexToRgb(hex) {
@@ -71,6 +74,17 @@ export function UIOverlay({
   const [viewMode, setViewMode] = useState('map'); // 'map' | 'list'
   const [searchQuery, setSearchQuery] = useState('');
   const [zoomLevel, setZoomLevel] = useState(100);
+  const [activeLegalModal, setActiveLegalModal] = useState(null); // 'privacy' | 'terms' | 'rules' | null
+
+  // Calculate live revenue generated from all owned buildings
+  const totalRevenueGenerated = buildings.reduce((acc, b) => {
+    return acc + (b.status === 'owned' ? Number(b.currentPrice || 0) : 0);
+  }, 0);
+
+  // Calculate hours elapsed since launch on September 7, 2026
+  const launchTimestamp = new Date('2026-09-07T00:00:00Z').getTime();
+  const currentTimestamp = Date.now();
+  const hoursSinceLaunch = Math.max(1, Math.floor(Math.abs(currentTimestamp - launchTimestamp) / (1000 * 60 * 60)));
 
   // Filter buildings by cluster and search query
   const filteredBuildings = buildings.filter((b) => {
@@ -120,7 +134,7 @@ export function UIOverlay({
   return (
     <div className="w-full flex flex-col items-center font-sans text-slate-900 bg-[#f3fbf6] min-h-screen relative">
 
-      {/* Full-Width Background Landscape Image with CSS Fallback */}
+      {/* Background Landscape Image */}
       <div className="absolute top-0 left-0 right-0 h-[650px] z-0 overflow-hidden pointer-events-none bg-gradient-to-b from-emerald-100/60 via-[#f3fbf6]/80 to-[#f3fbf6]">
         <img
           src="/bg-landscape.jpg"
@@ -138,7 +152,7 @@ export function UIOverlay({
       {/* ========================================================= */}
       <header className="w-full max-w-7xl px-4 md:px-8 py-4 flex items-center justify-between gap-4 z-30">
         {/* Brand Logo */}
-        <div className="flex items-center gap-2.5 cursor-pointer">
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black shadow-md shadow-emerald-600/30">
             <Building2 className="w-5 h-5" />
           </div>
@@ -151,13 +165,13 @@ export function UIOverlay({
         {/* Center Nav Links */}
         <nav className="hidden lg:flex items-center gap-1 font-bold text-xs text-slate-600 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm">
           <a href="#world-section" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors text-emerald-700 font-extrabold">Explore 3D</a>
+          <button onClick={() => setActiveLegalModal('rules')} className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Rules</button>
           <a href="#how-it-works" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">How it works</a>
-          <a href="#pricing" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Pricing</a>
-          <a href="#leaderboard" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Leaderboard</a>
-          <a href="#blog" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Blog</a>
+          <button onClick={() => setActiveLegalModal('privacy')} className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Privacy</button>
+          <button onClick={() => setActiveLegalModal('terms')} className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Terms</button>
         </nav>
 
-        {/* Right Search + Sign In + Get Started Buttons */}
+        {/* Right Search + Clerk Auth Buttons */}
         <div className="flex items-center gap-3 z-30">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/90 border border-slate-200 rounded-full text-xs text-slate-500 shadow-sm focus-within:border-emerald-500 transition-all">
             <Search className="w-3.5 h-3.5 text-slate-400" />
@@ -184,7 +198,6 @@ export function UIOverlay({
             </div>
           </SignedIn>
 
-
           <button
             onClick={() => document.getElementById('world-section')?.scrollIntoView({ behavior: 'smooth' })}
             className="px-5 py-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-full shadow-md shadow-emerald-600/30 transition-all hover:scale-105"
@@ -197,7 +210,16 @@ export function UIOverlay({
       {/* ========================================================= */}
       {/* 2. HERO SECTION                                           */}
       {/* ========================================================= */}
-      <section className="w-full relative py-10 md:py-14 px-4 flex flex-col items-center justify-center text-center z-10">
+      <section className="w-full relative py-8 md:py-12 px-4 flex flex-col items-center justify-center text-center z-10">
+        
+        {/* Live Side Project Revenue Banner */}
+        <div className="mb-4 px-5 py-2 bg-white/95 backdrop-blur-md border border-emerald-300 rounded-full text-xs font-bold text-slate-800 shadow-md flex items-center gap-2.5 animate-bounce-short">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>
+            This simple side project made <strong className="text-emerald-700 font-extrabold text-sm">${totalRevenueGenerated.toLocaleString()} USD</strong> since its launch {hoursSinceLaunch} hours ago
+          </span>
+        </div>
+
         {/* Handwritten Style Annotations */}
         <div className="hidden lg:block absolute top-8 left-[12%] max-w-[170px] text-left pointer-events-none transform -rotate-6">
           <p className="font-serif italic text-xs text-emerald-900/80 leading-snug font-bold">
@@ -226,7 +248,7 @@ export function UIOverlay({
           </h1>
 
           <p className="text-sm md:text-base text-slate-700 font-semibold max-w-lg mb-6 leading-relaxed">
-            Stop renting attention. Claim your space once. Get discovered forever.
+            Stop renting attention. Claim your 3D space once. Get discovered forever.
           </p>
 
           <button
@@ -237,7 +259,7 @@ export function UIOverlay({
             <ArrowRight className="w-4 h-4" />
           </button>
 
-          {/* Realistic Stats Bar */}
+          {/* Stats Bar */}
           <div className="flex items-center justify-center gap-6 md:gap-10 px-6 py-2.5 bg-white/95 backdrop-blur-md rounded-full border border-emerald-100 shadow-md text-xs font-bold text-slate-700">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-emerald-600" />
@@ -778,21 +800,264 @@ export function UIOverlay({
       </section>
 
       {/* FOOTER */}
-      <footer className="w-full border-t border-emerald-100 bg-white py-8 px-4 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-semibold">
-        <div className="flex items-center gap-2 text-slate-900 font-black">
-          <Building2 className="w-4 h-4 text-emerald-600" />
-          <span>LandOfSaaS</span>
+      <footer className="w-full border-t border-emerald-100 bg-white py-10 px-4 md:px-8 flex flex-col items-center justify-between gap-6 text-xs text-slate-500 font-semibold z-20">
+        <div className="w-full max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-slate-900 font-black">
+            <Building2 className="w-4 h-4 text-emerald-600" />
+            <span>LandOfSaaS</span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-6 text-slate-600 font-bold">
+            <a href="#world-section" className="hover:text-emerald-700 transition-colors">Explore 3D</a>
+            <button onClick={() => setActiveLegalModal('rules')} className="hover:text-emerald-700 transition-colors cursor-pointer">Rules of the Board</button>
+            <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-emerald-700 transition-colors cursor-pointer">Privacy Policy</button>
+            <button onClick={() => setActiveLegalModal('terms')} className="hover:text-emerald-700 transition-colors cursor-pointer">Terms &amp; Conditions</button>
+          </div>
+
+          <div className="flex items-center gap-3 text-slate-600 font-bold text-xs">
+            <span>Built by <a href="https://x.com/buildwithboo" target="_blank" rel="noopener noreferrer" className="text-emerald-700 hover:underline">@buildwithboo</a></span>
+            <span>·</span>
+            <a href="https://boobesh.com" target="_blank" rel="noopener noreferrer" className="text-emerald-700 hover:underline">boobesh.com</a>
+            <span>·</span>
+            <a href="https://www.linkedin.com/in/boobesh2912" target="_blank" rel="noopener noreferrer" className="text-emerald-700 hover:underline">LinkedIn</a>
+          </div>
         </div>
 
-        <div className="flex items-center gap-6 text-slate-600 font-bold">
-          <a href="#world-section" className="hover:text-emerald-700 transition-colors">Explore 3D</a>
-          <a href="#how-it-works" className="hover:text-emerald-700 transition-colors">How it works</a>
-          <a href="#pricing" className="hover:text-emerald-700 transition-colors">Pricing</a>
-          <a href="#leaderboard" className="hover:text-emerald-700 transition-colors">Leaderboard</a>
+        <div className="text-[11px] text-slate-400 text-center">
+          © 2026 LandOfSaaS. All rights reserved. Designed &amp; built for a more open 3D internet.
         </div>
-
-        <span>© 2026 LandOfSaaS. Built for a more open internet.</span>
       </footer>
+
+      {/* ========================================================= */}
+      {/* 5. LEGAL MODALS (Privacy Policy, Terms, Rules)            */}
+      {/* ========================================================= */}
+      {activeLegalModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white max-w-2xl w-full max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col text-slate-900">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black">
+                  {activeLegalModal === 'rules' && <ShieldCheck className="w-4 h-4" />}
+                  {activeLegalModal === 'privacy' && <FileText className="w-4 h-4" />}
+                  {activeLegalModal === 'terms' && <HelpCircle className="w-4 h-4" />}
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-slate-900">
+                    {activeLegalModal === 'rules' && 'Rules of the Board — LandOfSaaS'}
+                    {activeLegalModal === 'privacy' && 'Privacy Policy — LandOfSaaS'}
+                    {activeLegalModal === 'terms' && 'Terms & Conditions — LandOfSaaS'}
+                  </h2>
+                  <span className="text-[11px] text-slate-500 font-semibold">Last updated August 25, 2026</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveLegalModal(null)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-700 leading-relaxed font-medium">
+
+              {/* === RULES OF THE BOARD === */}
+              {activeLegalModal === 'rules' && (
+                <div className="space-y-4">
+                  <p className="text-sm font-bold text-slate-800">
+                    The whole system is nine rules long. Read it in a minute, then go bid.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <strong className="block text-emerald-800 font-black mb-1">01. Your bid is your 3D rank &amp; height</strong>
+                      The board is sorted by amount paid, highest first. Higher bids build taller 3D skyscrapers. Bids start at $2 and scale up.
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <strong className="block text-emerald-800 font-black mb-1">02. You don't need #1 to be listed</strong>
+                      Bid whatever you like. If your amount is under the current leader, you land wherever it ranks (#4, #17, etc.). Everyone who pays gets a 3D slot.
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <strong className="block text-emerald-800 font-black mb-1">03. Ties go to the latest bid</strong>
+                      If two apps sit at the same amount, the one that bid most recently ranks higher.
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <strong className="block text-emerald-800 font-black mb-1">04. Topping up costs the difference</strong>
+                      Submit the same website link again with a higher amount and you're charged only the gap — not the full new price. The smallest move up is $1.
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <strong className="block text-emerald-800 font-black mb-1">05. Ranks are permanent until outbid</strong>
+                      There is no clock and no expiry. Your 3D building holds its position for as long as nobody pays more.
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <strong className="block text-emerald-800 font-black mb-1">06. One listing per app domain</strong>
+                      A website is keyed to its domain, so the same product cannot occupy two spots. Submitting it again tops up your existing building.
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <strong className="block text-emerald-800 font-black mb-1">07. All sales are final</strong>
+                      Because a bid immediately changes a public 3D ranking, payments are non-refundable except when we remove a listing ourselves.
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <strong className="block text-emerald-800 font-black mb-1">08. What gets removed</strong>
+                      Malware, scams, adult content, impersonation, and anything illegal. Removed listings are refunded.
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                      <strong className="block text-emerald-800 font-black mb-1">09. Honest click counts</strong>
+                      The outbound clicks to your website are counted server-side without inflation or ads.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* === PRIVACY POLICY === */}
+              {activeLegalModal === 'privacy' && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">Information we collect</h3>
+                    <p>
+                      When you submit a product, place a bid, or customize a 3D building, we collect details you provide — such as your company name, website URL, custom wall color, logo, bid amount, and payment details needed to complete a transaction. We also collect basic usage data like outbound clicks to keep the board honest.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">How we use it</h3>
+                    <p>
+                      We use your information to run the 3D bid board, process payments via Dodo Payments, display listings and 3D building rankings, and respond to support requests. Click counts are displayed publicly on the board; we never sell your personal information to third parties.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">Payments</h3>
+                    <p>
+                      Payments are processed by third-party payment providers (Dodo Payments). We do not store your full payment card details on our servers.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">Cookies and analytics</h3>
+                    <p>
+                      We may use cookies and analytics services to understand how the site is used, measure traffic, and improve performance.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">Data sharing &amp; retention</h3>
+                    <p>
+                      We do not sell, rent, or trade your personal information. Public 3D listings remain visible until removed or outbid.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200">
+                    <h3 className="font-extrabold text-emerald-900 text-sm mb-1">Your rights &amp; Contact</h3>
+                    <p>
+                      You may request access to, correction of, or deletion of your personal information by contacting <strong>Boobesh</strong> via:
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-2 font-bold text-emerald-800">
+                      <a href="https://boobesh.com" target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                        boobesh.com <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <a href="https://x.com/buildwithboo" target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                        @buildwithboo <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <a href="https://www.linkedin.com/in/boobesh2912" target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                        LinkedIn <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* === TERMS & CONDITIONS === */}
+              {activeLegalModal === 'terms' && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">Acceptance of terms</h3>
+                    <p>
+                      By accessing or using LandOfSaaS, you agree to be bound by these terms. If you do not agree, please do not use the service.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">The 3D Bid Board</h3>
+                    <p>
+                      The board is ranked by the amount paid, highest first. Bids start at $2 and scale up. Bidding is governed by our Rules page.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">Payments and refunds</h3>
+                    <p>
+                      All sales are final. Because a bid immediately changes a public 3D ranking, payments are not refundable except when we remove a listing ourselves.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">Your content</h3>
+                    <p>
+                      You are responsible for the accuracy and legality of any product, link, or information you submit. You represent that you have the right to list it.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">Removals</h3>
+                    <p>
+                      We may remove listings for malware, scams, adult content, impersonation, or anything illegal.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1">No warranty &amp; Limitation of liability</h3>
+                    <p>
+                      The service is provided "as is". LandOfSaaS is not liable for indirect or consequential damages.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200">
+                    <h3 className="font-extrabold text-emerald-900 text-sm mb-1">Contact</h3>
+                    <p>
+                      Questions about these terms can be sent to Boobesh via:
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-2 font-bold text-emerald-800">
+                      <a href="https://boobesh.com" target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                        boobesh.com <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <a href="https://x.com/buildwithboo" target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                        @buildwithboo <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <a href="https://www.linkedin.com/in/boobesh2912" target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                        LinkedIn <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-500 font-semibold">
+              <span>Built by <a href="https://x.com/buildwithboo" target="_blank" rel="noopener noreferrer" className="text-emerald-700 hover:underline">@buildwithboo</a> · <a href="https://boobesh.com" target="_blank" rel="noopener noreferrer" className="text-emerald-700 hover:underline">boobesh.com</a></span>
+              <button
+                onClick={() => setActiveLegalModal(null)}
+                className="px-4 py-1.5 bg-emerald-600 text-white font-bold rounded-full hover:bg-emerald-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
