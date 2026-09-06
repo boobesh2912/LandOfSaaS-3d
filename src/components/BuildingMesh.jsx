@@ -56,8 +56,9 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
 
   const mainTowerH = height - lobbyH;
   const crownH = 0.5;
+  const centerY = slabH + lobbyH + mainTowerH / 2;
 
-  const logoContent = owner?.logo || building.customLogo || '🏢';
+  const logoContent = owner?.logo || building.customLogo;
   const isImageLogo = typeof logoContent === 'string' && (logoContent.startsWith('data:') || logoContent.startsWith('http') || logoContent.startsWith('/'));
 
   return (
@@ -118,7 +119,7 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
 
       {/* 3. Main Architectural Skyscraper Body */}
       <mesh
-        position={[0, slabH + lobbyH + mainTowerH / 2, 0]}
+        position={[0, centerY, 0]}
         castShadow
         receiveShadow
       >
@@ -132,8 +133,8 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         />
       </mesh>
 
-      {/* 4. Reflective Glass Window Facade Ribs (Mullions & Grid) */}
-      <mesh position={[0, slabH + lobbyH + mainTowerH / 2, 0]}>
+      {/* 4. Reflective Glass Window Facade Ribs */}
+      <mesh position={[0, centerY, 0]}>
         <boxGeometry args={[width * 1.02, mainTowerH * 0.92, depth * 0.98]} />
         <meshStandardMaterial
           color="#e0f2fe"
@@ -146,7 +147,7 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         />
       </mesh>
 
-      {/* Horizontal Architectural Floor Bands */}
+      {/* Horizontal Floor Bands */}
       {Array.from({ length: Math.min(10, Math.floor(floors / 3)) }).map((_, i) => {
         const yPos = slabH + lobbyH + (i + 1) * (mainTowerH / (Math.min(10, Math.floor(floors / 3)) + 1));
         return (
@@ -156,6 +157,39 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
           </mesh>
         );
       })}
+
+      {/* 4-Sided Company Logo Signage on Building Facades (Front, Back, Left, Right) */}
+      {isImageLogo && (
+        <group>
+          {/* Front Facade Sign */}
+          <Html transform distanceFactor={14} position={[0, centerY + mainTowerH * 0.2, depth / 2 + 0.04]} rotation={[0, 0, 0]}>
+            <div className="w-12 h-12 bg-white/95 p-1 rounded-xl shadow-2xl border-2 border-white flex items-center justify-center pointer-events-none">
+              <img src={logoContent} alt="Logo" className="w-full h-full object-contain rounded-lg" />
+            </div>
+          </Html>
+
+          {/* Back Facade Sign */}
+          <Html transform distanceFactor={14} position={[0, centerY + mainTowerH * 0.2, -depth / 2 - 0.04]} rotation={[0, Math.PI, 0]}>
+            <div className="w-12 h-12 bg-white/95 p-1 rounded-xl shadow-2xl border-2 border-white flex items-center justify-center pointer-events-none">
+              <img src={logoContent} alt="Logo" className="w-full h-full object-contain rounded-lg" />
+            </div>
+          </Html>
+
+          {/* Left Facade Sign */}
+          <Html transform distanceFactor={14} position={[-width / 2 - 0.04, centerY + mainTowerH * 0.2, 0]} rotation={[0, -Math.PI / 2, 0]}>
+            <div className="w-12 h-12 bg-white/95 p-1 rounded-xl shadow-2xl border-2 border-white flex items-center justify-center pointer-events-none">
+              <img src={logoContent} alt="Logo" className="w-full h-full object-contain rounded-lg" />
+            </div>
+          </Html>
+
+          {/* Right Facade Sign */}
+          <Html transform distanceFactor={14} position={[width / 2 + 0.04, centerY + mainTowerH * 0.2, 0]} rotation={[0, Math.PI / 2, 0]}>
+            <div className="w-12 h-12 bg-white/95 p-1 rounded-xl shadow-2xl border-2 border-white flex items-center justify-center pointer-events-none">
+              <img src={logoContent} alt="Logo" className="w-full h-full object-contain rounded-lg" />
+            </div>
+          </Html>
+        </group>
+      )}
 
       {/* 5. Setback Crown & Roof Penthouse */}
       <mesh position={[0, slabH + height + crownH / 2, 0]} castShadow>
@@ -176,20 +210,17 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
       {/* 6. Roof Helipad & Spire Antenna */}
       {height >= 6 && (
         <group position={[0, slabH + height + crownH + 0.05, 0]}>
-          {/* Helipad Ring */}
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.4, 0.55, 24]} />
             <meshBasicMaterial color="#f59e0b" side={THREE.DoubleSide} />
           </mesh>
 
-          {/* Roof Spire Antenna with Red Aircraft Warning Light */}
           {height >= 8 && (
             <group position={[0, 0, 0]}>
               <mesh position={[0, 0.8, 0]}>
                 <cylinderGeometry args={[0.03, 0.1, 1.6, 12]} />
                 <meshStandardMaterial color="#64748b" metalness={0.9} roughness={0.1} />
               </mesh>
-              {/* Aircraft Beacon Light */}
               <mesh position={[0, 1.6, 0]}>
                 <sphereGeometry args={[0.1, 12, 12]} />
                 <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.2} />
@@ -199,7 +230,7 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         </group>
       )}
 
-      {/* Floating Badge Overlay */}
+      {/* Floating Top Badge Overlay */}
       <Html
         position={[0, slabH + height + crownH + (height >= 8 ? 2.2 : 1.4), 0]}
         center
@@ -207,26 +238,17 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
       >
         {status === 'owned' && owner ? (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full shadow-xl border border-slate-200 text-xs font-black text-slate-900 pointer-events-none whitespace-nowrap transform hover:scale-105 transition-all">
-            {isImageLogo ? (
+            {isImageLogo && (
               <img src={logoContent} alt="Logo" className="w-4 h-4 object-contain rounded-full" />
-            ) : (
-              <span style={{ color: owner.color }} className="text-sm font-black">{logoContent}</span>
             )}
             <span>{owner.name}</span>
           </div>
         ) : isClaimed ? (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white backdrop-blur-md rounded-full shadow-xl text-xs font-black pointer-events-none whitespace-nowrap">
-            {isImageLogo ? (
+            {isImageLogo && (
               <img src={logoContent} alt="Logo" className="w-4 h-4 object-contain rounded-full" />
-            ) : (
-              <span className="text-sm">{logoContent}</span>
             )}
             <span>{name}</span>
-          </div>
-        ) : badgeLabel ? (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/90 text-white backdrop-blur-md rounded-full shadow-lg border border-slate-700 text-[11px] font-black pointer-events-none whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            {badgeLabel}
           </div>
         ) : (
           <div className="flex items-center gap-1 px-2 py-0.5 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-slate-200 text-[10px] font-bold text-slate-600 pointer-events-none whitespace-nowrap">

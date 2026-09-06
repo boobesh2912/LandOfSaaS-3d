@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, useAuth, useClerk, UserButton } from '@clerk/clerk-react';
 import {
   Building2,
   ArrowRight,
@@ -24,10 +24,11 @@ import {
   ShieldCheck,
   FileText,
   HelpCircle,
-  ExternalLink
+  ExternalLink,
+  LogIn
 } from 'lucide-react';
 import { WorldScene } from './WorldScene';
-import { PRESET_COLORS, PRESET_LOGOS } from '../data/buildings';
+import { PRESET_COLORS } from '../data/buildings';
 
 // Helper to convert hex to RGB object
 function hexToRgb(hex) {
@@ -67,14 +68,15 @@ export function UIOverlay({
   setCustomFloors,
   onClaimOrOutbid,
   claimSuccess,
-  isProcessingPayment,
-  isSignedIn,
-  setIsSignedIn
+  isProcessingPayment
 }) {
   const [viewMode, setViewMode] = useState('map'); // 'map' | 'list'
   const [searchQuery, setSearchQuery] = useState('');
   const [zoomLevel, setZoomLevel] = useState(100);
   const [activeLegalModal, setActiveLegalModal] = useState(null); // 'privacy' | 'terms' | 'rules' | null
+
+  const { isSignedIn } = useAuth();
+  const { openSignIn } = useClerk();
 
   // Calculate live revenue generated from all owned buildings
   const totalRevenueGenerated = buildings.reduce((acc, b) => {
@@ -104,7 +106,7 @@ export function UIOverlay({
 
   // Selected building current color / height / logo display
   const activeColor = customColor || selectedBuilding?.customColor || selectedBuilding?.owner?.color || '#10b981';
-  const activeLogo = customLogo || selectedBuilding?.owner?.logo || '🚀';
+  const activeLogo = customLogo || selectedBuilding?.customLogo || selectedBuilding?.owner?.logo;
   const activeFloors = customFloors || selectedBuilding?.floors || 14;
 
   const currentRgb = hexToRgb(activeColor);
@@ -129,6 +131,15 @@ export function UIOverlay({
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  // Claim Button Handler with Clerk Auth Protection
+  const handleClaimClick = () => {
+    if (!isSignedIn) {
+      openSignIn();
+      return;
+    }
+    onClaimOrOutbid(selectedBuilding, minOutbid);
   };
 
   return (
@@ -171,7 +182,7 @@ export function UIOverlay({
           <button onClick={() => setActiveLegalModal('terms')} className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Terms</button>
         </nav>
 
-        {/* Right Search + Clerk Auth Buttons */}
+        {/* Right Search + User Profile Avatar (NO sign-in button on home page) */}
         <div className="flex items-center gap-3 z-30">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/90 border border-slate-200 rounded-full text-xs text-slate-500 shadow-sm focus-within:border-emerald-500 transition-all">
             <Search className="w-3.5 h-3.5 text-slate-400" />
@@ -183,14 +194,6 @@ export function UIOverlay({
               className="bg-transparent border-none outline-none text-xs text-slate-800 font-medium w-28 md:w-36"
             />
           </div>
-
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
-                Sign in
-              </button>
-            </SignInButton>
-          </SignedOut>
 
           <SignedIn>
             <div className="flex items-center gap-2">
@@ -213,7 +216,7 @@ export function UIOverlay({
       <section className="w-full relative py-8 md:py-12 px-4 flex flex-col items-center justify-center text-center z-10">
         
         {/* Live Side Project Revenue Banner */}
-        <div className="mb-4 px-5 py-2 bg-white/95 backdrop-blur-md border border-emerald-300 rounded-full text-xs font-bold text-slate-800 shadow-md flex items-center gap-2.5 animate-bounce-short">
+        <div className="mb-4 px-5 py-2 bg-white/95 backdrop-blur-md border border-emerald-300 rounded-full text-xs font-bold text-slate-800 shadow-md flex items-center gap-2.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>
             This simple side project made <strong className="text-emerald-700 font-extrabold text-sm">${totalRevenueGenerated.toLocaleString()} USD</strong> since its launch {hoursSinceLaunch} hours ago
@@ -280,7 +283,7 @@ export function UIOverlay({
       </section>
 
       {/* ========================================================= */}
-      {/* 3. FULL-WIDTH 3D WORLD INTERFACE                         */}
+      {/* 3. FULL-WIDTH 3D WORLD MAP (Default View)                */}
       {/* ========================================================= */}
       <section id="world-section" className="w-full relative max-w-[1440px] px-2 md:px-6 mb-16 scroll-mt-20 z-10">
         
@@ -308,7 +311,7 @@ export function UIOverlay({
                   onSelectBuilding(b);
                   if (b) {
                     setCustomColor(b.customColor || b.owner?.color || '#10b981');
-                    setCustomLogo(b.customLogo || b.owner?.logo || '🚀');
+                    setCustomLogo(b.customLogo || b.owner?.logo);
                     setCustomFloors(b.floors || 14);
                     setCustomBrandName(b.owner?.name || '');
                     setCustomWebsite(b.owner?.website || '');
@@ -335,7 +338,7 @@ export function UIOverlay({
                         {typeof b.owner?.logo === 'string' && b.owner.logo.startsWith('data:') ? (
                           <img src={b.owner.logo} alt="Logo" className="w-5 h-5 rounded-full object-contain" />
                         ) : (
-                          <span className="text-base">{b.owner?.logo || '🏢'}</span>
+                          <span className="text-base">🏢</span>
                         )}
                         <h4 className="font-extrabold text-sm text-slate-900">{b.name}</h4>
                       </div>
@@ -430,7 +433,7 @@ export function UIOverlay({
             </button>
           </div>
 
-          {/* RIGHT FLOATING INSPECTION & CUSTOMIZATION MODAL */}
+          {/* RIGHT FLOATING INSPECTION & CUSTOMIZATION MODAL (Opens ONLY when a building is clicked) */}
           {selectedBuilding && (
             <div className="absolute top-4 right-4 z-30 max-w-sm w-full max-h-[92%] overflow-y-auto bg-white/95 backdrop-blur-2xl p-5 rounded-3xl border border-white/80 shadow-2xl text-slate-900 pointer-events-auto">
               
@@ -464,11 +467,11 @@ export function UIOverlay({
                     {typeof activeLogo === 'string' && activeLogo.startsWith('data:') ? (
                       <img src={activeLogo} alt="Logo" className="w-7 h-7 object-contain rounded" />
                     ) : (
-                      <span className="text-xl">{activeLogo}</span>
+                      <span className="text-[10px] font-black">4-FACADE LOGO</span>
                     )}
                     <span className="text-[9px] font-black tracking-wider uppercase mt-1 opacity-90">{activeFloors}F</span>
                   </div>
-                  <span className="text-[11px] font-extrabold text-slate-600 block mt-2">Live 3D Customization Preview</span>
+                  <span className="text-[11px] font-extrabold text-slate-600 block mt-2">3D Building Preview</span>
                 </div>
               </div>
 
@@ -613,41 +616,29 @@ export function UIOverlay({
                   </div>
                 </div>
 
-                {/* Logo Selector & Custom Image Upload */}
+                {/* Upload Company Logo File Dropzone (Rendered on 4 Sides of 3D Building) */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] font-bold text-slate-500">Brand Logo / Custom Upload</label>
-                    <label className="text-[10px] font-extrabold text-emerald-700 hover:text-emerald-800 cursor-pointer flex items-center gap-1">
-                      <Upload className="w-3 h-3" />
-                      Upload Logo
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-                    {PRESET_LOGOS.map(l => (
-                      <button
-                        key={l.name}
-                        onClick={() => {
-                          setCustomLogo(l.icon);
-                          if (selectedBuilding.owner) selectedBuilding.owner.logo = l.icon;
-                        }}
-                        className={`w-7 h-7 rounded-lg border text-sm flex items-center justify-center transition-all ${
-                          activeLogo === l.icon
-                            ? 'bg-emerald-100 border-emerald-600 shadow-sm scale-105'
-                            : 'bg-white border-slate-200 hover:bg-slate-50'
-                        }`}
-                        title={l.name}
-                      >
-                        {l.icon}
-                      </button>
-                    ))}
-                  </div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Company Logo (Renders on 4 Building Facades)</label>
+                  <label className="w-full h-20 border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl bg-slate-50 hover:bg-emerald-50/50 flex flex-col items-center justify-center cursor-pointer transition-all p-2 text-center">
+                    {activeLogo && activeLogo.startsWith('data:') ? (
+                      <div className="flex items-center gap-2">
+                        <img src={activeLogo} alt="Uploaded Logo" className="w-9 h-9 object-contain rounded-lg shadow-sm border bg-white" />
+                        <span className="text-[11px] font-bold text-emerald-800">4-Side Facade Logo Uploaded ✓</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 text-emerald-600 mb-1" />
+                        <span className="text-xs font-bold text-slate-700">Upload Company Logo</span>
+                        <span className="text-[9px] text-slate-400 font-medium">PNG, SVG or JPG up to 2MB</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
 
                 {/* Grow Building Height */}
@@ -707,10 +698,10 @@ export function UIOverlay({
                 </div>
               </div>
 
-              {/* Action CTA Buttons */}
+              {/* Action CTA Button (Requires Clerk Sign In if signed out) */}
               <div className="space-y-2">
                 <button
-                  onClick={() => onClaimOrOutbid(selectedBuilding, minOutbid)}
+                  onClick={handleClaimClick}
                   disabled={isProcessingPayment}
                   className={`w-full py-3 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg transition-all ${
                     claimSuccess
@@ -731,6 +722,11 @@ export function UIOverlay({
                     <>
                       <CheckCircle2 className="w-4 h-4 animate-bounce" />
                       Building Claimed &amp; Customized!
+                    </>
+                  ) : !isSignedIn ? (
+                    <>
+                      <LogIn className="w-4 h-4" />
+                      Sign In &amp; Pay via Dodo (${minOutbid})
                     </>
                   ) : (
                     <>
@@ -783,7 +779,7 @@ export function UIOverlay({
             </div>
             <h3 className="text-base font-black text-slate-900 mb-1.5">3. Customize</h3>
             <p className="text-xs text-slate-600 font-medium leading-relaxed">
-              Upload your custom company logo, choose your RGB wall color, website link, and grow building height.
+              Upload your custom company logo for all 4 facades, choose your RGB wall color, website link, and grow building height.
             </p>
           </div>
 
