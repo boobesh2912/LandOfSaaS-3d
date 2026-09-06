@@ -73,7 +73,7 @@ export function UIOverlay({
   claimSuccess,
   isProcessingPayment
 }) {
-  const [viewMode, setViewMode] = useState('map'); // 'map' | 'list'
+  const [viewMode, setViewMode] = useState('3d'); // '3d' | '2d' | 'list'
   const [searchQuery, setSearchQuery] = useState('');
   const [zoomLevel, setZoomLevel] = useState(100);
   const [activeLegalModal, setActiveLegalModal] = useState(null); // 'privacy' | 'terms' | 'rules' | null
@@ -192,7 +192,7 @@ export function UIOverlay({
         </div>
 
         {/* Center Nav Links */}
-        <nav className="hidden lg:flex items-center gap-1 font-bold text-xs text-slate-600 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm">
+        <nav className="hidden md:flex items-center gap-1 font-bold text-xs text-slate-600 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm">
           <a href="#world-section" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors text-emerald-700 font-extrabold">Explore 3D</a>
           <button onClick={() => setActiveLegalModal('rules')} className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Rules</button>
           <a href="#how-it-works" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">How it works</a>
@@ -200,31 +200,13 @@ export function UIOverlay({
           <button onClick={() => setActiveLegalModal('terms')} className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Terms</button>
         </nav>
 
-        {/* Right Search + User Profile Avatar */}
+        {/* Right User Profile Avatar */}
         <div className="flex items-center gap-3 z-30">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/90 border border-slate-200 rounded-full text-xs text-slate-500 shadow-sm focus-within:border-emerald-500 transition-all">
-            <Search className="w-3.5 h-3.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search companies..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-xs text-slate-800 font-medium w-28 md:w-36"
-            />
-          </div>
-
           <SignedIn>
             <div className="flex items-center gap-2">
               <UserButton />
             </div>
           </SignedIn>
-
-          <button
-            onClick={() => document.getElementById('world-section')?.scrollIntoView({ behavior: 'smooth' })}
-            className="px-5 py-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-full shadow-md shadow-emerald-600/30 transition-all hover:scale-105"
-          >
-            Get Started
-          </button>
         </div>
       </header>
 
@@ -291,19 +273,20 @@ export function UIOverlay({
             <img
               src="/bg-landscape.jpg"
               alt="Background"
-              className="w-full h-full object-cover filter brightness-105 contrast-105 opacity-80 transition-opacity"
+              className="w-full h-full object-cover filter brightness-110 contrast-110 opacity-90 transition-opacity"
               onError={(e) => {
                 e.currentTarget.style.opacity = '0';
               }}
             />
           </div>
 
-          {/* 3D WebGL Canvas */}
-          {viewMode === 'map' ? (
+          {/* 3D or 2D WebGL Canvas / List View */}
+          {viewMode === '3d' || viewMode === '2d' ? (
             <div className="relative z-10 w-full h-full">
               <WorldScene
                 buildings={filteredBuildings}
                 selectedBuilding={selectedBuilding}
+                is2DMode={viewMode === '2d'}
                 onSelectBuilding={(b) => {
                   onSelectBuilding(b);
                   if (b) {
@@ -319,15 +302,15 @@ export function UIOverlay({
               />
             </div>
           ) : (
-            <div className="relative z-10 w-full h-full overflow-y-auto p-8 bg-white/95 backdrop-blur-md">
-              <h3 className="text-xl font-black text-slate-900 mb-4">All Available &amp; Owned Territory Slots</h3>
+            <div className="relative z-10 w-full h-full overflow-y-auto p-4 sm:p-8 bg-white/95 backdrop-blur-md">
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 mb-4">All Available &amp; Owned Territory Slots</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {filteredBuildings.map(b => (
                   <div
                     key={b.id}
                     onClick={() => {
                       onSelectBuilding(b);
-                      setViewMode('map');
+                      setViewMode('3d');
                     }}
                     className="p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 bg-slate-50 hover:bg-white transition-all cursor-pointer shadow-sm flex items-center justify-between"
                   >
@@ -352,22 +335,33 @@ export function UIOverlay({
             </div>
           )}
 
-          {/* MAP CONTROLS OVERLAY */}
-          <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-white/90 backdrop-blur-md p-1 rounded-2xl border border-slate-200/80 shadow-md">
+          {/* MAP CONTROLS OVERLAY (3D | 2D | List) */}
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-md p-1 rounded-2xl border border-slate-200/80 shadow-md max-w-[calc(100%-2rem)] overflow-x-auto">
             <button
-              onClick={() => setViewMode('map')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'map'
+              onClick={() => setViewMode('3d')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                viewMode === '3d'
                   ? 'bg-emerald-700 text-white shadow-sm'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               <Compass className="w-3.5 h-3.5" />
-              Map View
+              3D View
+            </button>
+            <button
+              onClick={() => setViewMode('2d')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                viewMode === '2d'
+                  ? 'bg-emerald-700 text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              2D Map
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                 viewMode === 'list'
                   ? 'bg-emerald-700 text-white shadow-sm'
                   : 'text-slate-600 hover:bg-slate-100'
@@ -378,7 +372,7 @@ export function UIOverlay({
             </button>
           </div>
 
-          {/* Left Category Menu */}
+          {/* Desktop Left Category Menu */}
           <div className="absolute top-16 left-4 z-20 hidden sm:flex flex-col gap-1 bg-white/90 backdrop-blur-md p-2 rounded-2xl border border-slate-200/80 shadow-lg w-44">
             {[
               { id: 'all', label: 'All Zones', icon: '🌐' },
@@ -404,6 +398,32 @@ export function UIOverlay({
             ))}
           </div>
 
+          {/* Mobile Category Scrollable Filter Bar */}
+          <div className="absolute top-16 left-4 right-4 z-20 flex sm:hidden overflow-x-auto gap-1.5 p-1.5 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-md">
+            {[
+              { id: 'all', label: 'All', icon: '🌐' },
+              { id: 'ai', label: 'AI', icon: '🤖' },
+              { id: 'mkt', label: 'Marketing', icon: '📣' },
+              { id: 'saas', label: 'SaaS', icon: '💻' },
+              { id: 'web3', label: 'Web3', icon: '⬡' },
+              { id: 'crt', label: 'Creator', icon: '🎨' },
+              { id: 'open', label: 'Open', icon: '🌱' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterCluster(tab.id)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  filterCluster === tab.id
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
           {/* Bottom Left Realistic Active Users */}
           <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full border border-slate-200/80 shadow-md text-xs font-bold text-slate-700">
             <div className="flex -space-x-1.5 overflow-hidden">
@@ -411,7 +431,7 @@ export function UIOverlay({
               <span className="inline-block h-5 w-5 rounded-full ring-2 ring-white bg-blue-500 text-[10px] text-white font-black flex items-center justify-center">B</span>
             </div>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span><strong className="text-slate-900 font-extrabold">5</strong> people exploring right now</span>
+            <span><strong className="text-slate-900 font-extrabold">5</strong> active visitors</span>
           </div>
 
           {/* Bottom Right Zoom Bar */}
@@ -433,7 +453,7 @@ export function UIOverlay({
 
           {/* RIGHT FLOATING INSPECTION & CUSTOMIZATION MODAL (Opens ONLY when a building is clicked) */}
           {selectedBuilding && (
-            <div className="absolute top-4 right-4 z-30 max-w-sm w-full max-h-[92%] overflow-y-auto bg-white/95 backdrop-blur-2xl p-5 rounded-3xl border border-white/80 shadow-2xl text-slate-900 pointer-events-auto">
+            <div className="fixed inset-x-0 bottom-0 sm:absolute sm:inset-auto sm:top-4 sm:right-4 z-40 max-w-full sm:max-w-sm w-full max-h-[85vh] sm:max-h-[92%] overflow-y-auto bg-white/95 backdrop-blur-2xl p-4 sm:p-5 rounded-t-3xl sm:rounded-3xl border border-slate-200/80 sm:border-white/80 shadow-2xl text-slate-900 pointer-events-auto transition-all">
               
               {/* Card Header */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">

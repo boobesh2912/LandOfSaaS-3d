@@ -1,15 +1,41 @@
-import React, { useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useRef, useEffect } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { BuildingMesh } from './BuildingMesh';
 import { TerrainEnvironment } from './TerrainEnvironment';
 import * as THREE from 'three';
 
+function CameraController({ is2DMode, controlsRef }) {
+  const { camera } = useThree();
+
+  useEffect(() => {
+    if (!controlsRef.current) return;
+    if (is2DMode) {
+      camera.position.set(0, 52, 0.01);
+      camera.lookAt(0, 0, 0);
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.maxPolarAngle = 0.05;
+      controlsRef.current.minPolarAngle = 0;
+      controlsRef.current.update();
+    } else {
+      camera.position.set(0, 28, 38);
+      camera.lookAt(0, 0, 0);
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.maxPolarAngle = Math.PI / 2.25;
+      controlsRef.current.minPolarAngle = 0;
+      controlsRef.current.update();
+    }
+  }, [is2DMode, camera, controlsRef]);
+
+  return null;
+}
+
 export function WorldScene({
   buildings,
   selectedBuilding,
   onSelectBuilding,
-  filterCluster
+  filterCluster,
+  is2DMode = false
 }) {
   const controlsRef = useRef();
 
@@ -30,34 +56,36 @@ export function WorldScene({
         <PerspectiveCamera
           makeDefault
           fov={42}
-          position={[0, 28, 38]}
+          position={is2DMode ? [0, 52, 0.01] : [0, 28, 38]}
           near={0.5}
           far={220}
         />
 
-        {/* Orbit Controls: enableZoom={false} allows natural page wheel scrolling */}
+        <CameraController is2DMode={is2DMode} controlsRef={controlsRef} />
+
+        {/* Orbit Controls */}
         <OrbitControls
           ref={controlsRef}
           enableDamping
           dampingFactor={0.06}
           enableZoom={false}
-          maxPolarAngle={Math.PI / 2.25}
-          minDistance={12}
-          maxDistance={70}
+          maxPolarAngle={is2DMode ? 0.05 : Math.PI / 2.25}
+          minDistance={10}
+          maxDistance={80}
           target={[0, 0, 0]}
         />
 
         {/* Soft Fog Haze */}
-        <fogExp2 attach="fog" color="#dcfce7" density={0.008} />
+        <fogExp2 attach="fog" color="#dcfce7" density={0.005} />
 
         {/* Lighting Setup */}
-        <ambientLight intensity={0.7} color="#f0fdf4" />
-        <hemisphereLight skyColor="#e0f2fe" groundColor="#166534" intensity={0.55} />
+        <ambientLight intensity={0.85} color="#f0fdf4" />
+        <hemisphereLight skyColor="#e0f2fe" groundColor="#166534" intensity={0.65} />
 
         {/* Sunlight */}
         <directionalLight
           position={[-25, 45, 25]}
-          intensity={1.3}
+          intensity={1.4}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -70,7 +98,7 @@ export function WorldScene({
           shadow-bias={-0.0001}
         />
 
-        <directionalLight position={[20, 15, -20]} intensity={0.35} color="#93c5fd" />
+        <directionalLight position={[20, 15, -20]} intensity={0.4} color="#93c5fd" />
 
         {/* Terrain & Category Cluster Rings */}
         <TerrainEnvironment />

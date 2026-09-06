@@ -9,14 +9,68 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Security Headers & CORS Setup
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
+
+app.use(cors());
+app.use(express.json({ limit: '5mb' })); // Limit body payload size
+
+// Simple In-Memory Rate Limiter for Payment Endpoint (10 requests per min per IP)
+const rateLimitMap = new Map();
+const rateLimiter = (req, res, next) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute window
+  const maxRequests = 15;
+
+  const record = rateLimitMap.get(ip) || { count: 0, resetTime: now + windowMs };
+
+  if (now > record.resetTime) {
+    record.count = 1;
+    record.resetTime = now + windowMs;
+  } else {
+    record.count += 1;
+  }
+
+  rateLimitMap.set(ip, record);
+
+  if (record.count > maxRequests) {
+    return res.status(429).json({ error: 'Too many payment session requests. Please wait a minute.' });
+  }
+
+  next();
+};
+
+// Input Sanitization & URL Validator Helpers
+function sanitizeText(str = '', maxLength = 100) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/<[^>]*>?/gm, '').substring(0, maxLength).trim();
+}
+
+function sanitizeUrl(urlStr = '') {
+  if (typeof urlStr !== 'string') return 'https://mystartup.com';
+  let cleanUrl = urlStr.trim();
+  if (!cleanUrl) return 'https://mystartup.com';
+  // Block dangerous schemes like javascript:, data:, vbscript:
+  if (/^(javascript|vbscript|data):/i.test(cleanUrl)) {
+    return 'https://mystartup.com';
+  }
+  if (!/^https?:\/\//i.test(cleanUrl)) {
+    cleanUrl = 'https://' + cleanUrl;
+  }
+  return cleanUrl.substring(0, 500);
+}
+
 // Initialize Supabase Client
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zbghycarahaxdwxhziiq.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_U-ihIqExyPZfkcypQuKpYQ_D-Iu7Vaz';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-app.use(cors());
-app.use(express.json());
 
 // In-Memory Authoritative Building Database (Synced with Supabase)
 let buildingsState = [...BUILDINGS_DATA];
@@ -46,7 +100,7 @@ app.get('/api/buildings', async (req, res) => {
 // ---------------------------------------------------------
 // 2. CREATE DODO PAYMENT SESSION (Server-Side Price Authority)
 // ---------------------------------------------------------
-app.post('/api/create-payment-session', async (req, res) => {
+app.post('/api/create-payment-session', rateLimiter, async (req, res) => {
   try {
     const {
       buildingId,
@@ -70,11 +124,11 @@ app.post('/api/create-payment-session', async (req, res) => {
 
     const minRequiredBid = building.status === 'owned' ? building.currentPrice + 5 : building.basePrice;
 
-    const brandName = customBrandName?.trim() || 'My Startup';
-    const website = customWebsite?.trim() || 'https://mystartup.com';
-    const color = customColor || '#10b981';
+    const brandName = sanitizeText(customBrandName, 80) || 'My Startup';
+    const website = sanitizeUrl(customWebsite);
+    const color = (customColor && /^#[0-9A-F]{6}$/i.test(customColor)) ? customColor : '#10b981';
     const logo = customLogo || '🚀';
-    const floors = customFloors || 14;
+    const floors = Math.max(4, Math.min(60, Number(customFloors) || 14));
 
     const apiKey = process.env.DODO_PAYMENTS_API_KEY;
     const productId = process.env.DODO_PRODUCT_ID || 'pdt_0NmvqOrB01KtIWKY0htQs';
