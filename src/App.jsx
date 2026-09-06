@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { UIOverlay } from './components/UIOverlay';
 import { BUILDINGS_DATA } from './data/buildings';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 
 export function App() {
   const [buildings, setBuildings] = useState(BUILDINGS_DATA);

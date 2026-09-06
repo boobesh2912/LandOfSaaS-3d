@@ -57,6 +57,9 @@ app.post('/api/create-payment-session', async (req, res) => {
     const apiKey = process.env.DODO_PAYMENTS_API_KEY;
     const productId = process.env.DODO_PRODUCT_ID || 'pdt_0NmvqOrB01KtIWKY0htQs';
 
+    const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : 'http://localhost:3000');
+    const returnUrl = `${origin}/?payment=success&building_id=${buildingId}`;
+
     // Call Dodo Payments API (Test Mode)
     // Ref: https://test.dodopayments.com/payments
     const dodoResponse = await fetch('https://test.dodopayments.com/payments', {
@@ -81,7 +84,7 @@ app.post('/api/create-payment-session', async (req, res) => {
           email: 'buyer@landofsaas.com',
           name: brandName
         },
-        return_url: `http://localhost:3000/?payment=success&building_id=${buildingId}`,
+        return_url: returnUrl,
         metadata: {
           building_id: buildingId,
           user_id: userId || 'anonymous',
@@ -100,7 +103,7 @@ app.post('/api/create-payment-session', async (req, res) => {
     if (!dodoResponse.ok) {
       console.warn('[Dodo API Test Mode Fallback]:', dodoData);
       // Fallback checkout session URL for test mode if endpoint schema differs
-      const checkoutUrl = dodoData.payment_link || dodoData.checkout_url || `http://localhost:3000/?payment=success&building_id=${buildingId}&bid=${minRequiredBid}`;
+      const checkoutUrl = dodoData.payment_link || dodoData.checkout_url || `${returnUrl}&bid=${minRequiredBid}`;
       return res.json({
         success: true,
         checkout_url: checkoutUrl,
@@ -163,7 +166,11 @@ app.post('/api/webhooks/dodo', (req, res) => {
   }
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 LandOfSaaS Backend Server running on http://localhost:${PORT}`);
-});
+export default app;
+
+// Start Server locally
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 LandOfSaaS Backend Server running on http://localhost:${PORT}`);
+  });
+}
