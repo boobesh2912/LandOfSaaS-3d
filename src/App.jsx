@@ -1,26 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth, useUser } from '@clerk/clerk-react';
 import { UIOverlay } from './components/UIOverlay';
 import { BUILDINGS_DATA } from './data/buildings';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// Isolated Auth State Listener Component
-function AuthStateListener({ onAuthState }) {
-  try {
-    const { isSignedIn, userId } = useAuth();
-    const { user } = useUser();
-    useEffect(() => {
-      onAuthState({ isSignedIn, userId, user });
-    }, [isSignedIn, userId, user]);
-  } catch (e) {
-    // Auth provider not active
-  }
-  return null;
-}
-
 export function App() {
-  const [authState, setAuthState] = useState({ isSignedIn: false, userId: null, user: null });
   const [buildings, setBuildings] = useState(BUILDINGS_DATA);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [filterCluster, setFilterCluster] = useState('all');
@@ -31,6 +15,7 @@ export function App() {
   const [customFloors, setCustomFloors] = useState(14);
   const [claimSuccess, setClaimSuccess] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(true);
 
   // Fetch Authoritative Server State
   useEffect(() => {
@@ -61,7 +46,7 @@ export function App() {
                   ...b,
                   status: 'owned',
                   owner: {
-                    name: authState.user?.firstName ? `${authState.user.firstName}'s Startup` : 'Verified Owner',
+                    name: 'Verified Owner',
                     logo: '🚀',
                     website: 'https://mystartup.com',
                     color: '#10b981'
@@ -74,7 +59,7 @@ export function App() {
 
       setTimeout(() => setClaimSuccess(false), 4000);
     }
-  }, [authState.user]);
+  }, []);
 
   // SECURE BACKEND PAYMENT INITIATION HANDLER
   const handleClaimOrOutbid = async (building) => {
@@ -83,7 +68,6 @@ export function App() {
     setIsProcessingPayment(true);
 
     try {
-      // 1. Call Backend API (Server validates price)
       const res = await fetch(`${API_BASE}/api/create-payment-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +78,7 @@ export function App() {
           customColor,
           customLogo,
           customFloors,
-          userId: authState.userId || 'anonymous'
+          userId: 'user_123'
         })
       });
 
@@ -106,7 +90,6 @@ export function App() {
         return;
       }
 
-      // 2. Redirect User to Dodo Payments Checkout Page
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
       } else {
@@ -122,7 +105,6 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#f3fbf6] text-slate-900 font-sans relative overflow-x-hidden">
-      <AuthStateListener onAuthState={setAuthState} />
       <UIOverlay
         buildings={buildings}
         selectedBuilding={selectedBuilding}
@@ -142,7 +124,8 @@ export function App() {
         onClaimOrOutbid={handleClaimOrOutbid}
         claimSuccess={claimSuccess}
         isProcessingPayment={isProcessingPayment}
-        isSignedIn={authState.isSignedIn}
+        isSignedIn={isSignedIn}
+        setIsSignedIn={setIsSignedIn}
       />
     </div>
   );

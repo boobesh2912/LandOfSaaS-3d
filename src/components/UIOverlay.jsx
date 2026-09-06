@@ -21,29 +21,8 @@ import {
   Maximize2,
   Loader2
 } from 'lucide-react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import { WorldScene } from './WorldScene';
 import { PRESET_COLORS, PRESET_LOGOS } from '../data/buildings';
-
-// Standard Clerk Auth Navigation Component
-function SafeClerkAuthNav() {
-  return (
-    <>
-      <SignedOut>
-        <SignInButton mode="modal">
-          <button className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer">
-            Sign in
-          </button>
-        </SignInButton>
-      </SignedOut>
-      <SignedIn>
-        <div className="flex items-center gap-2 border border-slate-200 rounded-full p-1 bg-white shadow-sm">
-          <UserButton showName={false} />
-        </div>
-      </SignedIn>
-    </>
-  );
-}
 
 export function UIOverlay({
   buildings = [],
@@ -64,7 +43,8 @@ export function UIOverlay({
   onClaimOrOutbid,
   claimSuccess,
   isProcessingPayment,
-  isSignedIn
+  isSignedIn,
+  setIsSignedIn
 }) {
   const [viewMode, setViewMode] = useState('map'); // 'map' | 'list'
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,7 +108,7 @@ export function UIOverlay({
           <a href="#blog" className="px-3 py-1.5 hover:text-emerald-700 rounded-full transition-colors">Blog</a>
         </nav>
 
-        {/* Right Search + Sign In + Clerk UserButton + Get Started */}
+        {/* Right Search + Sign In + Get Started Buttons */}
         <div className="flex items-center gap-3 z-30">
           {/* Search Bar */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/90 border border-slate-200 rounded-full text-xs text-slate-500 shadow-sm focus-within:border-emerald-500 transition-all">
@@ -142,8 +122,12 @@ export function UIOverlay({
             />
           </div>
 
-          {/* Safe Clerk Auth Nav */}
-          <SafeClerkAuthNav />
+          <button
+            onClick={() => setIsSignedIn(!isSignedIn)}
+            className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-sm transition-all cursor-pointer"
+          >
+            {isSignedIn ? 'Account' : 'Sign in'}
+          </button>
 
           <button
             onClick={() => document.getElementById('world-section')?.scrollIntoView({ behavior: 'smooth' })}
