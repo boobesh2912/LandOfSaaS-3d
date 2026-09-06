@@ -15,7 +15,7 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
     depth,
     status,
     owner,
-    accentColor = '#10b981',
+    accentColor,
     customColor,
     tier,
     badgeLabel,
@@ -33,8 +33,17 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
     );
   });
 
-  // Building Color Priority: customColor -> owner color -> accentColor -> default green
-  const baseColor = customColor || (status === 'owned' && owner?.color ? owner.color : accentColor || '#10b981');
+  // Building Color Priority:
+  // If building is customized / claimed: use customColor or owner.color
+  // If building is available (unclaimed): default to clean uncolored slate gray (#cbd5e1)
+  const isClaimed = status === 'owned' || Boolean(customColor);
+  const baseColor = customColor
+    ? customColor
+    : status === 'owned' && owner?.color
+    ? owner.color
+    : '#cbd5e1';
+
+  const glowColor = isClaimed ? baseColor : '#38bdf8';
 
   // Architectural Dimensions
   const slabW = width + 0.6;
@@ -47,6 +56,9 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
 
   const mainTowerH = height - lobbyH;
   const crownH = 0.5;
+
+  const logoContent = owner?.logo || building.customLogo || '🏢';
+  const isImageLogo = typeof logoContent === 'string' && (logoContent.startsWith('data:') || logoContent.startsWith('http') || logoContent.startsWith('/'));
 
   return (
     <group
@@ -72,7 +84,7 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[slabW * 0.6, slabW * 1.0, 32]} />
           <meshBasicMaterial
-            color={isSelected ? '#10b981' : '#38bdf8'}
+            color={isSelected ? glowColor : '#38bdf8'}
             transparent
             opacity={isSelected ? 0.85 : 0.5}
             side={THREE.DoubleSide}
@@ -113,8 +125,8 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         <boxGeometry args={[width, mainTowerH, depth]} />
         <meshStandardMaterial
           color={baseColor}
-          roughness={0.2}
-          metalness={0.5}
+          roughness={isClaimed ? 0.2 : 0.5}
+          metalness={isClaimed ? 0.5 : 0.2}
           emissive={hovered ? baseColor : (isSelected ? '#047857' : '#000000')}
           emissiveIntensity={hovered ? 0.4 : (isSelected ? 0.2 : 0)}
         />
@@ -157,7 +169,7 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         <meshStandardMaterial
           color={baseColor}
           emissive={baseColor}
-          emissiveIntensity={0.9}
+          emissiveIntensity={isClaimed ? 0.9 : 0.2}
         />
       </mesh>
 
@@ -195,17 +207,30 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
       >
         {status === 'owned' && owner ? (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full shadow-xl border border-slate-200 text-xs font-black text-slate-900 pointer-events-none whitespace-nowrap transform hover:scale-105 transition-all">
-            <span style={{ color: owner.color }} className="text-sm font-black">{owner.logo}</span>
+            {isImageLogo ? (
+              <img src={logoContent} alt="Logo" className="w-4 h-4 object-contain rounded-full" />
+            ) : (
+              <span style={{ color: owner.color }} className="text-sm font-black">{logoContent}</span>
+            )}
             <span>{owner.name}</span>
           </div>
+        ) : isClaimed ? (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white backdrop-blur-md rounded-full shadow-xl text-xs font-black pointer-events-none whitespace-nowrap">
+            {isImageLogo ? (
+              <img src={logoContent} alt="Logo" className="w-4 h-4 object-contain rounded-full" />
+            ) : (
+              <span className="text-sm">{logoContent}</span>
+            )}
+            <span>{name}</span>
+          </div>
         ) : badgeLabel ? (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600/95 text-white backdrop-blur-md rounded-full shadow-lg border border-emerald-400/60 text-[11px] font-black pointer-events-none whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/90 text-white backdrop-blur-md rounded-full shadow-lg border border-slate-700 text-[11px] font-black pointer-events-none whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             {badgeLabel}
           </div>
         ) : (
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-slate-200 text-[10px] font-bold text-slate-700 pointer-events-none whitespace-nowrap">
-            Available
+          <div className="flex items-center gap-1 px-2 py-0.5 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-slate-200 text-[10px] font-bold text-slate-600 pointer-events-none whitespace-nowrap">
+            Unclaimed
           </div>
         )}
       </Html>

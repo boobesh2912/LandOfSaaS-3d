@@ -11,83 +11,161 @@ export function TerrainEnvironment() {
     { name: "Open Zone", color: "#14b8a6", pos: [0, 0.02, 0], radius: 6.5 }
   ];
 
-  // Tree positions
-  const treePositions = useMemo(() => {
-    const trees = [];
-    const count = 52;
-    for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2 + (Math.random() * 0.15);
-      const radius = 19.0 + Math.random() * 3.5;
+  // Procedural Tree & Bush Locations
+  const { trees, bushes, lamps } = useMemo(() => {
+    const treeList = [];
+    const bushList = [];
+    const lampList = [];
+
+    // Outer Ring Forest (56 detailed trees)
+    const treeCount = 56;
+    for (let i = 0; i < treeCount; i++) {
+      const angle = (i / treeCount) * Math.PI * 2 + (Math.random() * 0.12);
+      const radius = 18.5 + Math.random() * 4.0;
       const x = Math.cos(angle) * radius;
       const z = Math.sin(angle) * radius;
-      const scale = 0.7 + Math.random() * 0.6;
-      const type = Math.random() > 0.4 ? 'pine' : 'round';
-      trees.push({ x, z, scale, type, key: i });
+      const scale = 0.75 + Math.random() * 0.55;
+      const type = i % 3 === 0 ? 'pine' : i % 3 === 1 ? 'deciduous' : 'birch';
+      treeList.push({ x, z, scale, type, key: `tree-${i}` });
     }
-    return trees;
+
+    // Garden Bushes & Flowering Plants (40 bushes scattered near paths)
+    const bushCount = 40;
+    for (let i = 0; i < bushCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 6.0 + Math.random() * 11.0;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const scale = 0.4 + Math.random() * 0.45;
+      const bushColor = ['#15803d', '#166534', '#047857', '#10b981', '#059669'][i % 5];
+      bushList.push({ x, z, scale, color: bushColor, key: `bush-${i}` });
+    }
+
+    // Street Lamp Posts (12 glowing lamps along central walkway)
+    const lampCount = 12;
+    for (let i = 0; i < lampCount; i++) {
+      const angle = (i / lampCount) * Math.PI * 2;
+      const radius = 10.5;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      lampList.push({ x, z, key: `lamp-${i}` });
+    }
+
+    return { trees: treeList, bushes: bushList, lamps: lampList };
   }, []);
 
   return (
     <group>
-      {/* Main Floating Grassy Platform */}
+      {/* Main Grassy Island Platform */}
       <mesh position={[0, -0.6, 0]} receiveShadow>
-        <cylinderGeometry args={[23, 24.5, 1.2, 64]} />
-        <meshStandardMaterial color="#22c55e" roughness={0.75} metalness={0.05} />
+        <cylinderGeometry args={[23.5, 25.0, 1.2, 64]} />
+        <meshStandardMaterial color="#22c55e" roughness={0.7} metalness={0.05} />
       </mesh>
 
-      {/* Island Cliff Base Foundation */}
+      {/* Island Cliff Foundation Wall */}
       <mesh position={[0, -1.8, 0]}>
-        <cylinderGeometry args={[24.5, 25.8, 1.4, 64]} />
-        <meshStandardMaterial color="#475569" roughness={0.9} metalness={0.1} />
+        <cylinderGeometry args={[25.0, 26.2, 1.4, 64]} />
+        <meshStandardMaterial color="#334155" roughness={0.85} metalness={0.15} />
       </mesh>
 
-      {/* Surrounding Water Plane */}
+      {/* Surrounding Ocean Water Plane */}
       <mesh position={[0, -2.4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[160, 160]} />
-        <meshStandardMaterial color="#0ea5e9" roughness={0.15} metalness={0.25} transparent opacity={0.8} />
+        <planeGeometry args={[180, 180]} />
+        <meshStandardMaterial color="#0ea5e9" roughness={0.1} metalness={0.3} transparent opacity={0.85} />
       </mesh>
 
-      {/* 5 Category Clusters Ground Tint Rings */}
+      {/* Central Pedestrian Walkway Ring */}
+      <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[9.5, 11.2, 64]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.9} />
+      </mesh>
+
+      {/* 5 Category Cluster Ground Zones */}
       {CLUSTERS.map((cluster, i) => (
         <group key={i} position={cluster.pos}>
-          {/* Filled Disc */}
+          {/* Soft Disc Tint */}
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <circleGeometry args={[cluster.radius, 32]} />
-            <meshBasicMaterial color={cluster.color} transparent opacity={0.12} side={THREE.DoubleSide} />
+            <meshBasicMaterial color={cluster.color} transparent opacity={0.14} side={THREE.DoubleSide} />
           </mesh>
-          {/* Border Ring */}
+          {/* Glowing Border Ring */}
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[cluster.radius - 0.15, cluster.radius, 32]} />
-            <meshBasicMaterial color={cluster.color} transparent opacity={0.35} side={THREE.DoubleSide} />
+            <meshBasicMaterial color={cluster.color} transparent opacity={0.4} side={THREE.DoubleSide} />
           </mesh>
         </group>
       ))}
 
-      {/* 3D Trees */}
-      {treePositions.map((tree) => (
+      {/* 3D Trees Layer */}
+      {trees.map((tree) => (
         <group key={tree.key} position={[tree.x, 0, tree.z]} scale={tree.scale}>
+          {/* Wooden Trunk */}
           <mesh position={[0, 0.6, 0]} castShadow>
-            <cylinderGeometry args={[0.15, 0.25, 1.2, 8]} />
+            <cylinderGeometry args={[0.16, 0.28, 1.2, 8]} />
             <meshStandardMaterial color="#78350f" roughness={0.9} />
           </mesh>
 
           {tree.type === 'pine' ? (
+            /* Multi-tier Pine Tree */
             <group position={[0, 1.6, 0]}>
               <mesh position={[0, 0, 0]} castShadow>
-                <coneGeometry args={[1.1, 1.6, 8]} />
+                <coneGeometry args={[1.2, 1.6, 8]} />
                 <meshStandardMaterial color="#166534" roughness={0.7} />
               </mesh>
               <mesh position={[0, 0.8, 0]} castShadow>
-                <coneGeometry args={[0.85, 1.4, 8]} />
+                <coneGeometry args={[0.9, 1.4, 8]} />
                 <meshStandardMaterial color="#15803d" roughness={0.7} />
+              </mesh>
+              <mesh position={[0, 1.5, 0]} castShadow>
+                <coneGeometry args={[0.6, 1.1, 8]} />
+                <meshStandardMaterial color="#22c55e" roughness={0.7} />
+              </mesh>
+            </group>
+          ) : tree.type === 'birch' ? (
+            /* Birch Round Canopy */
+            <group position={[0, 1.7, 0]}>
+              <mesh position={[0, 0, 0]} castShadow>
+                <icosahedronGeometry args={[1.1, 1]} />
+                <meshStandardMaterial color="#10b981" roughness={0.65} />
               </mesh>
             </group>
           ) : (
-            <mesh position={[0, 1.8, 0]} castShadow>
-              <dodecahedronGeometry args={[1.0, 1]} />
-              <meshStandardMaterial color="#15803d" roughness={0.7} />
-            </mesh>
+            /* Deciduous Multi-Sphere Canopy */
+            <group position={[0, 1.7, 0]}>
+              <mesh position={[0, 0, 0]} castShadow>
+                <dodecahedronGeometry args={[1.0, 1]} />
+                <meshStandardMaterial color="#15803d" roughness={0.7} />
+              </mesh>
+              <mesh position={[0.4, 0.4, 0.2]} castShadow>
+                <dodecahedronGeometry args={[0.6, 1]} />
+                <meshStandardMaterial color="#166534" roughness={0.7} />
+              </mesh>
+            </group>
           )}
+        </group>
+      ))}
+
+      {/* 3D Garden Bushes */}
+      {bushes.map((b) => (
+        <mesh key={b.key} position={[b.x, b.scale * 0.4, b.z]} scale={b.scale} castShadow>
+          <dodecahedronGeometry args={[0.8, 1]} />
+          <meshStandardMaterial color={b.color} roughness={0.8} />
+        </mesh>
+      ))}
+
+      {/* Street Lamps */}
+      {lamps.map((lamp) => (
+        <group key={lamp.key} position={[lamp.x, 0, lamp.z]}>
+          {/* Post */}
+          <mesh position={[0, 0.7, 0]}>
+            <cylinderGeometry args={[0.04, 0.06, 1.4, 8]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.2} />
+          </mesh>
+          {/* Light Fixture */}
+          <mesh position={[0, 1.4, 0]}>
+            <sphereGeometry args={[0.12, 12, 12]} />
+            <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={1.2} />
+          </mesh>
         </group>
       ))}
     </group>
