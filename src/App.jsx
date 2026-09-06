@@ -25,7 +25,6 @@ export function App() {
   });
 
   const [selectedBuilding, setSelectedBuilding] = useState(null);
-  const [filterCluster, setFilterCluster] = useState('all');
   const [customBrandName, setCustomBrandName] = useState('');
   const [customWebsite, setCustomWebsite] = useState('');
   const [customColor, setCustomColor] = useState('#10b981');
@@ -211,8 +210,6 @@ export function App() {
         buildings={buildings}
         selectedBuilding={selectedBuilding}
         onSelectBuilding={setSelectedBuilding}
-        filterCluster={filterCluster}
-        setFilterCluster={setFilterCluster}
         customBrandName={customBrandName}
         setCustomBrandName={setCustomBrandName}
         customWebsite={customWebsite}

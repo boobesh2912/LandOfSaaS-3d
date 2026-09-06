@@ -56,8 +56,6 @@ export function UIOverlay({
   buildings = [],
   selectedBuilding,
   onSelectBuilding,
-  filterCluster,
-  setFilterCluster,
   customBrandName,
   setCustomBrandName,
   customWebsite,
@@ -94,13 +92,12 @@ export function UIOverlay({
   const currentTimestamp = Date.now();
   const hoursSinceLaunch = Math.max(1, Math.floor(Math.abs(currentTimestamp - launchTimestamp) / (1000 * 60 * 60)));
 
-  // Filter buildings by cluster and search query
+  // Filter buildings by search query
   const filteredBuildings = buildings.filter((b) => {
-    const matchesCluster = filterCluster === 'all' || b.cluster === filterCluster;
-    const matchesSearch =
+    return (
       b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (b.owner?.name && b.owner.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCluster && matchesSearch;
+      (b.owner?.name && b.owner.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
   });
 
   // Calculate minimum outbid price & upgrade difference for selected building
@@ -444,58 +441,6 @@ export function UIOverlay({
               <ListFilter className="w-3.5 h-3.5" />
               List View
             </button>
-          </div>
-
-          {/* Desktop Left Category Menu */}
-          <div className="absolute top-16 left-4 z-20 hidden sm:flex flex-col gap-1 bg-white/90 backdrop-blur-md p-2 rounded-2xl border border-slate-200/80 shadow-lg w-44">
-            {[
-              { id: 'all', label: 'All Zones', icon: '🌐' },
-              { id: 'ai', label: 'AI & Tech', icon: '🤖' },
-              { id: 'mkt', label: 'Marketing', icon: '📣' },
-              { id: 'saas', label: 'SaaS', icon: '💻' },
-              { id: 'web3', label: 'Web3', icon: '⬡' },
-              { id: 'crt', label: 'Creator Economy', icon: '🎨' },
-              { id: 'open', label: 'Open Zone', icon: '🌱' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setFilterCluster(tab.id)}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all text-left ${
-                  filterCluster === tab.id
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-slate-700 hover:bg-emerald-50 hover:text-emerald-800'
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Mobile Category Scrollable Filter Bar */}
-          <div className="absolute top-16 left-4 right-4 z-20 flex sm:hidden overflow-x-auto gap-1.5 p-1.5 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-md">
-            {[
-              { id: 'all', label: 'All', icon: '🌐' },
-              { id: 'ai', label: 'AI', icon: '🤖' },
-              { id: 'mkt', label: 'Marketing', icon: '📣' },
-              { id: 'saas', label: 'SaaS', icon: '💻' },
-              { id: 'web3', label: 'Web3', icon: '⬡' },
-              { id: 'crt', label: 'Creator', icon: '🎨' },
-              { id: 'open', label: 'Open', icon: '🌱' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setFilterCluster(tab.id)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  filterCluster === tab.id
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
           </div>
 
           {/* Bottom Left Realistic Active Users */}

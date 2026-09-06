@@ -34,16 +34,12 @@ export function WorldScene({
   buildings,
   selectedBuilding,
   onSelectBuilding,
-  filterCluster,
   is2DMode = false
 }) {
   const controlsRef = useRef();
 
-  // Filter buildings by cluster
-  const filteredBuildings = buildings.filter((b) => {
-    if (filterCluster === 'all') return true;
-    return b.cluster === filterCluster;
-  });
+  // All buildings are unconditionally rendered in the 3D scene
+  const filteredBuildings = buildings;
 
   return (
     <div className="w-full h-full relative">

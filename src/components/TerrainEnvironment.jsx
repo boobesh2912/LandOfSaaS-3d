@@ -94,22 +94,6 @@ export function TerrainEnvironment() {
         <meshStandardMaterial color="#e2e8f0" roughness={0.9} />
       </mesh>
 
-      {/* 5 Category Cluster Ground Zones */}
-      {CLUSTERS.map((cluster, i) => (
-        <group key={i} position={cluster.pos}>
-          {/* Soft Disc Tint */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[cluster.radius, 32]} />
-            <meshBasicMaterial color={cluster.color} transparent opacity={0.14} side={THREE.DoubleSide} />
-          </mesh>
-          {/* Glowing Border Ring */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[cluster.radius - 0.15, cluster.radius, 32]} />
-            <meshBasicMaterial color={cluster.color} transparent opacity={0.4} side={THREE.DoubleSide} />
-          </mesh>
-        </group>
-      ))}
-
       {/* 3D Trees Layer */}
       {trees.map((tree) => (
         <group key={tree.key} position={[tree.x, 0, tree.z]} scale={tree.scale}>
