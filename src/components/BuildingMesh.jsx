@@ -69,9 +69,10 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
     return tex;
   }, [logoContent, isImageLogo]);
 
-  // Scaled logo dimensions based on customLogoScale
-  const logoSizeW = Math.min(width * 0.85, (customLogoScale || 1.4) * 0.8);
-  const logoSizeH = logoSizeW;
+  // Scaled logo dimensions (Expanded size for prominent 4-sided rendering)
+  const logoScaleFactor = customLogoScale || 1.8;
+  const logoSizeW = Math.min(width * 0.96, logoScaleFactor * 1.15);
+  const logoSizeH = Math.min(mainTowerH * 0.75, logoSizeW * 1.15);
 
   return (
     <group
@@ -170,7 +171,7 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         );
       })}
 
-      {/* 4-Sided Company Logo Signage via Native 3D WebGL Planes (No Depth Bleed-through Bug) */}
+      {/* 4-Sided Company Logo Signage via Native 3D WebGL Planes (Prominent Front, Back, Left, Right) */}
       {logoTexture && (
         <group position={[0, centerY, 0]}>
           {/* Front Facade 3D Logo Mesh */}
@@ -238,32 +239,21 @@ export function BuildingMesh({ building, isSelected, onSelect }) {
         </group>
       )}
 
-      {/* Floating Top Badge Overlay */}
-      <Html
-        position={[0, slabH + height + crownH + (height >= 8 ? 2.2 : 1.4), 0]}
-        center
-        distanceFactor={28}
-      >
-        {status === 'owned' && owner ? (
+      {/* Floating Top Badge Overlay (ONLY for claimed/owned buildings, Unclaimed badges removed) */}
+      {(status === 'owned' || isClaimed) && (
+        <Html
+          position={[0, slabH + height + crownH + (height >= 8 ? 2.2 : 1.4), 0]}
+          center
+          distanceFactor={28}
+        >
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full shadow-xl border border-slate-200 text-xs font-black text-slate-900 pointer-events-none whitespace-nowrap transform hover:scale-105 transition-all">
             {isImageLogo && (
               <img src={logoContent} alt="Logo" className="w-4 h-4 object-contain rounded-full" />
             )}
-            <span>{owner.name}</span>
+            <span>{owner?.name || name}</span>
           </div>
-        ) : isClaimed ? (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white backdrop-blur-md rounded-full shadow-xl text-xs font-black pointer-events-none whitespace-nowrap">
-            {isImageLogo && (
-              <img src={logoContent} alt="Logo" className="w-4 h-4 object-contain rounded-full" />
-            )}
-            <span>{name}</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-white/90 backdrop-blur-md rounded-full shadow-md border border-slate-200 text-[10px] font-bold text-slate-600 pointer-events-none whitespace-nowrap">
-            Unclaimed
-          </div>
-        )}
-      </Html>
+        </Html>
+      )}
     </group>
   );
 }

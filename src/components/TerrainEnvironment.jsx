@@ -11,10 +11,11 @@ export function TerrainEnvironment() {
     { name: "Open Zone", color: "#14b8a6", pos: [0, 0.02, 0], radius: 6.5 }
   ];
 
-  // Procedural Tree & Bush Locations
-  const { trees, bushes, lamps } = useMemo(() => {
+  // Procedural Tree, Bush, Flower & Lamp Locations
+  const { trees, bushes, flowers, lamps } = useMemo(() => {
     const treeList = [];
     const bushList = [];
+    const flowerList = [];
     const lampList = [];
 
     // Outer Ring Forest (56 detailed trees)
@@ -29,7 +30,7 @@ export function TerrainEnvironment() {
       treeList.push({ x, z, scale, type, key: `tree-${i}` });
     }
 
-    // Garden Bushes & Flowering Plants (40 bushes scattered near paths)
+    // Garden Bushes (40 bushes scattered near paths)
     const bushCount = 40;
     for (let i = 0; i < bushCount; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -39,6 +40,19 @@ export function TerrainEnvironment() {
       const scale = 0.4 + Math.random() * 0.45;
       const bushColor = ['#15803d', '#166534', '#047857', '#10b981', '#059669'][i % 5];
       bushList.push({ x, z, scale, color: bushColor, key: `bush-${i}` });
+    }
+
+    // 3D Colorful Flower Patch Clusters (64 vibrant flowers around central walkways & garden paths)
+    const flowerCount = 64;
+    const flowerColors = ['#f43f5e', '#fbbf24', '#a855f7', '#ef4444', '#38bdf8', '#ffffff', '#f472b6'];
+    for (let i = 0; i < flowerCount; i++) {
+      const angle = (i / flowerCount) * Math.PI * 2 + (Math.random() * 0.2);
+      const radius = 4.5 + Math.random() * 13.0;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const scale = 0.25 + Math.random() * 0.3;
+      const color = flowerColors[i % flowerColors.length];
+      flowerList.push({ x, z, scale, color, key: `flower-${i}` });
     }
 
     // Street Lamp Posts (12 glowing lamps along central walkway)
@@ -51,7 +65,7 @@ export function TerrainEnvironment() {
       lampList.push({ x, z, key: `lamp-${i}` });
     }
 
-    return { trees: treeList, bushes: bushList, lamps: lampList };
+    return { trees: treeList, bushes: bushList, flowers: flowerList, lamps: lampList };
   }, []);
 
   return (
@@ -151,6 +165,22 @@ export function TerrainEnvironment() {
           <dodecahedronGeometry args={[0.8, 1]} />
           <meshStandardMaterial color={b.color} roughness={0.8} />
         </mesh>
+      ))}
+
+      {/* 3D Flower Blossoms & Garden Plants */}
+      {flowers.map((fl) => (
+        <group key={fl.key} position={[fl.x, 0, fl.z]} scale={fl.scale}>
+          {/* Flower Stem */}
+          <mesh position={[0, 0.15, 0]}>
+            <cylinderGeometry args={[0.03, 0.04, 0.3, 6]} />
+            <meshStandardMaterial color="#15803d" roughness={0.8} />
+          </mesh>
+          {/* Flower Blossom Petals */}
+          <mesh position={[0, 0.32, 0]} castShadow>
+            <dodecahedronGeometry args={[0.22, 1]} />
+            <meshStandardMaterial color={fl.color} roughness={0.4} emissive={fl.color} emissiveIntensity={0.2} />
+          </mesh>
+        </group>
       ))}
 
       {/* Street Lamps */}
