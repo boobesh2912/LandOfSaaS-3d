@@ -68,10 +68,10 @@ export function TerrainEnvironment() {
         <meshStandardMaterial color="#334155" roughness={0.85} metalness={0.15} />
       </mesh>
 
-      {/* Surrounding Ocean Water Plane */}
+      {/* Surrounding Ocean Water Plane (Translucent so actual background image shines through) */}
       <mesh position={[0, -2.4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[180, 180]} />
-        <meshStandardMaterial color="#0ea5e9" roughness={0.1} metalness={0.3} transparent opacity={0.85} />
+        <meshStandardMaterial color="#38bdf8" roughness={0.1} metalness={0.2} transparent opacity={0.12} />
       </mesh>
 
       {/* Central Pedestrian Walkway Ring */}

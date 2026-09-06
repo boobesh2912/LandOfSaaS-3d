@@ -76,7 +76,7 @@ export function WorldScene({
         />
 
         {/* Soft Fog Haze */}
-        <fogExp2 attach="fog" color="#dcfce7" density={0.005} />
+        <fogExp2 attach="fog" color="#dcfce7" density={0.001} />
 
         {/* Lighting Setup */}
         <ambientLight intensity={0.85} color="#f0fdf4" />
